@@ -414,7 +414,7 @@ abstract final class Api {
   // iPhone Duo 适配）。本仓库的标签名不是纯版本号，列表接口不按时间排序，
   // 所以直接取 latest
   static const String latestApp =
-      'https://api.github.com/repos/ShionjiART/PiliPlus/releases/latest';
+      'https://api.github.com/repos/Stasert/PiliPlus/releases/latest';
 
   // 多少人在看
   // https://api.bilibili.com/x/player/online/total?aid=913663681&cid=1203559746&bvid=BV1MM4y1s7NZ&ts=56427838

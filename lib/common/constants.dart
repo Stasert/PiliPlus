@@ -1,10 +1,10 @@
 abstract final class Constants {
   static const appName = 'PiliPlus';
   // 本维护版（iPhone Duo 适配）的仓库，原版是 bggRGjQaUbCoE/PiliPlus
-  static const sourceCodeUrl = 'https://github.com/ShionjiART/PiliPlus';
+  static const sourceCodeUrl = 'https://github.com/Stasert/PiliPlus';
 
-  /// 本维护版的主线分支（main 只用来同步原版）
-  static const sourceCodeBranch = 'release';
+  /// 本仓库的主线分支
+  static const sourceCodeBranch = 'main';
 
   // 27eb53fc9058f8c3  移动端 Android
   // 4409e2ce8ffd12b8  HD版
