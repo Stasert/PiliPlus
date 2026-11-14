@@ -19,10 +19,7 @@ class _FavNotePageState extends State<FavNotePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: 2,
-      vsync: this,
-    );
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -66,9 +63,8 @@ class _FavNotePageState extends State<FavNotePage>
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelStyle:
-                    TabBarTheme.of(
-                      context,
-                    ).labelStyle?.copyWith(fontSize: 14) ??
+                    TabBarTheme.of(context).labelStyle
+                        ?.copyWith(fontSize: 14) ??
                     const TextStyle(fontSize: 14),
                 labelColor: theme.colorScheme.onSecondaryContainer,
                 unselectedLabelColor: theme.colorScheme.outline,

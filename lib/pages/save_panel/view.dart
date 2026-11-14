@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
@@ -63,6 +65,9 @@ class SavePanel extends StatefulWidget {
 }
 
 class _SavePanelState extends State<SavePanel> {
+  /// 保存图片的最大宽度，与常见直板 iPhone 相同（如 iPhone 17 Pro 为 402pt）
+  static const _maxImageWidth = 402.0;
+
   final boundaryKey = GlobalKey();
 
   bool showBottom = true;
@@ -90,6 +95,8 @@ class _SavePanelState extends State<SavePanel> {
     } else if (_item case final DynamicItemModel i) {
       uri = _parseDyn(i);
       if (kDebugMode) debugPrint(uri);
+    } else if (_item case final Iterable<ReplyInfo> i) {
+      _parseReply(i.first);
     }
   }
 
@@ -337,12 +344,57 @@ class _SavePanelState extends State<SavePanel> {
     }
   }
 
+  ReplyItemGrpc _handleReply(ReplyInfo i, [divider = true]) => ReplyItemGrpc(
+    replyItem: i,
+    replyLevel: 0,
+    upMid: widget.upMid,
+    needDivider: divider,
+  );
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = ColorScheme.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final padding = MediaQuery.viewPaddingOf(context);
-    final maxWidth = MediaQuery.sizeOf(context).shortestSide;
+    // 保存的图片和直板手机一样宽。折叠屏、平板的短边更宽，图片会显得过宽
+    final maxWidth = math.min(
+      MediaQuery.sizeOf(context).shortestSide,
+      _maxImageWidth,
+    );
     late final coverSize = MediaQuery.textScalerOf(context).scale(65);
+
+    final Widget child;
+
+    switch (_item) {
+      case ReplyInfo reply:
+        child = _handleReply(reply, false);
+      case DynamicItemModel dyn:
+        child = DynamicPanel(
+          item: dyn,
+          isDetail: true,
+          isSave: true,
+        );
+      case Iterable<ReplyInfo> chain:
+        final first = chain.first;
+        final List<Widget> children;
+        if (first.parent == .ZERO) {
+          children = [
+            _handleReply(first, false),
+            Divider(
+              height: 20,
+              color: theme.dividerColor.withValues(alpha: 0.1),
+              thickness: 3.5,
+            ),
+            ...chain.skip(1).map(_handleReply),
+          ];
+        } else {
+          children = chain.map(_handleReply).toList();
+        }
+        child = Column(children: children);
+      default:
+        throw UnsupportedError(_item.toString());
+    }
+
     return Stack(
       clipBehavior: .none,
       alignment: .center,
@@ -371,22 +423,7 @@ class _SavePanelState extends State<SavePanel> {
                     mainAxisSize: .min,
                     crossAxisAlignment: .start,
                     children: [
-                      IgnorePointer(
-                        child: switch (_item) {
-                          ReplyInfo reply => ReplyItemGrpc(
-                            replyItem: reply,
-                            replyLevel: 0,
-                            needDivider: false,
-                            upMid: widget.upMid,
-                          ),
-                          DynamicItemModel dyn => DynamicPanel(
-                            item: dyn,
-                            isDetail: true,
-                            isSave: true,
-                          ),
-                          _ => throw UnsupportedError(_item.toString()),
-                        },
-                      ),
+                      IgnorePointer(child: child),
                       if (cover?.isNotEmpty == true &&
                           title?.isNotEmpty == true)
                         Container(

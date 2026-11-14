@@ -44,16 +44,8 @@ class _HotPageState extends State<HotPage>
         spacing: 4,
         mainAxisSize: MainAxisSize.min,
         children: [
-          NetworkImgLayer(
-            width: 35,
-            height: 35,
-            type: .emote,
-            src: iconUrl,
-          ),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 12),
-          ),
+          NetworkImgLayer(width: 35, height: 35, type: .emote, src: iconUrl),
+          Text(title, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );
@@ -63,6 +55,7 @@ class _HotPageState extends State<HotPage>
   Widget build(BuildContext context) {
     super.build(context);
     return refreshIndicator(
+      key: controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -122,9 +115,7 @@ class _HotPageState extends State<HotPage>
             ),
           SliverPadding(
             padding: const EdgeInsets.only(top: 7, bottom: 100),
-            sliver: Obx(
-              () => _buildBody(controller.loadingState.value),
-            ),
+            sliver: Obx(() => _buildBody(controller.loadingState.value)),
           ),
         ],
       ),

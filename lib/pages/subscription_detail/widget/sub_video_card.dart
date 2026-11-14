@@ -19,11 +19,7 @@ class SubVideoCardH extends StatelessWidget {
   final SubDetailItemModel videoItem;
   final int? searchType;
 
-  const SubVideoCardH({
-    super.key,
-    required this.videoItem,
-    this.searchType,
-  });
+  const SubVideoCardH({super.key, required this.videoItem, this.searchType});
 
   @override
   Widget build(BuildContext context) {
@@ -105,9 +101,7 @@ class SubVideoCardH extends StatelessWidget {
             child: Text(
               videoItem.title!,
               textAlign: TextAlign.start,
-              style: const TextStyle(
-                letterSpacing: 0.3,
-              ),
+              style: const TextStyle(letterSpacing: 0.3),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -123,10 +117,7 @@ class SubVideoCardH extends StatelessWidget {
           Row(
             spacing: 8,
             children: [
-              StatWidget(
-                type: StatType.play,
-                value: videoItem.cntInfo?.play,
-              ),
+              StatWidget(type: StatType.play, value: videoItem.cntInfo?.play),
               StatWidget(
                 type: StatType.danmaku,
                 value: videoItem.cntInfo?.danmaku,

@@ -8,6 +8,7 @@ bool usesInnerVideoSplit({
 }) =>
     isIPhone &&
     windowSize.shortestSide >= 600 &&
+    windowSize.width >= 820 &&
     layout == InnerVideoDetailLayout.split;
 
 typedef VideoPaneBuilder = Widget Function(

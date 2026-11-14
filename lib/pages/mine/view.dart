@@ -133,10 +133,7 @@ class _MediaPageState extends CommonPageState<MinePage>
                       mainAxisAlignment: .center,
                       children: [
                         Icon(e.icon, color: primary),
-                        Text(
-                          e.title,
-                          style: const TextStyle(fontSize: 13),
-                        ),
+                        Text(e.title, style: const TextStyle(fontSize: 13)),
                       ],
                     ),
                   ),
@@ -183,21 +180,19 @@ class _MediaPageState extends CommonPageState<MinePage>
               onPressed: () => Get.toNamed('/myReply'),
               icon: const Icon(Icons.message_outlined),
             ),
-          Obx(
-            () {
-              final anonymity = MineController.anonymity.value;
-              return IconButton(
-                iconSize: iconSize,
-                padding: padding,
-                style: style,
-                tooltip: "${anonymity ? '退出' : '进入'}无痕模式",
-                onPressed: MineController.onChangeAnonymity,
-                icon: anonymity
-                    ? const Icon(MdiIcons.incognito)
-                    : const Icon(MdiIcons.incognitoOff),
-              );
-            },
-          ),
+          Obx(() {
+            final anonymity = MineController.anonymity.value;
+            return IconButton(
+              iconSize: iconSize,
+              padding: padding,
+              style: style,
+              tooltip: "${anonymity ? '退出' : '进入'}无痕模式",
+              onPressed: MineController.onChangeAnonymity,
+              icon: anonymity
+                  ? const Icon(MdiIcons.incognito)
+                  : const Icon(MdiIcons.incognitoOff),
+            );
+          }),
           IconButton(
             iconSize: iconSize,
             padding: padding,
@@ -335,18 +330,12 @@ class _MediaPageState extends CommonPageState<MinePage>
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
-                              text: '硬币 ',
-                              style: coinLabelStyle,
-                            ),
+                            TextSpan(text: '硬币 ', style: coinLabelStyle),
                             TextSpan(
                               text: userInfo.money?.toString() ?? '-',
                               style: coinValStyle,
                             ),
-                            TextSpan(
-                              text: "      经验 ",
-                              style: coinLabelStyle,
-                            ),
+                            TextSpan(text: "      经验 ", style: coinLabelStyle),
                             TextSpan(
                               text: levelInfo?.currentExp?.toString() ?? '-',
                               style: coinValStyle,
@@ -432,14 +421,8 @@ class _MediaPageState extends CommonPageState<MinePage>
               mainAxisSize: .min,
               mainAxisAlignment: .center,
               children: [
-                Text(
-                  count?.toString() ?? '-',
-                  style: countStyle,
-                ),
-                Text(
-                  name,
-                  style: labelStyle,
-                ),
+                Text(count?.toString() ?? '-', style: countStyle),
+                Text(name, style: labelStyle),
               ],
             ),
           ),
@@ -461,9 +444,9 @@ class _MediaPageState extends CommonPageState<MinePage>
         item: element,
         onPop: () => _autoRefresh(controller.favCtr!),
       ),
-      onPushDetail: () => Get.toNamed(
-        '/fav',
-      )?.whenComplete(() => _autoRefresh(controller.favCtr!)),
+      onPushDetail: () =>
+          Get.toNamed('/fav')
+              ?.whenComplete(() => _autoRefresh(controller.favCtr!)),
     );
   }
 
@@ -475,9 +458,9 @@ class _MediaPageState extends CommonPageState<MinePage>
         item: element,
         onPop: () => _autoRefresh(controller.historyCtr!),
       ),
-      onPushDetail: () => Get.toNamed(
-        '/history',
-      )?.whenComplete(() => _autoRefresh(controller.historyCtr!)),
+      onPushDetail: () =>
+          Get.toNamed('/history')
+              ?.whenComplete(() => _autoRefresh(controller.historyCtr!)),
     );
   }
 
@@ -489,9 +472,9 @@ class _MediaPageState extends CommonPageState<MinePage>
         item: element,
         onPop: () => _autoRefresh(controller.laterCtr!),
       ),
-      onPushDetail: () => Get.toNamed(
-        '/later',
-      )?.whenComplete(() => _autoRefresh(controller.laterCtr!)),
+      onPushDetail: () =>
+          Get.toNamed('/later')
+              ?.whenComplete(() => _autoRefresh(controller.laterCtr!)),
     );
   }
 
@@ -503,9 +486,9 @@ class _MediaPageState extends CommonPageState<MinePage>
         item: element,
         onPop: () => _autoRefresh(controller.subCtr!),
       ),
-      onPushDetail: () => Get.toNamed(
-        '/subscription',
-      )?.whenComplete(() => _autoRefresh(controller.subCtr!)),
+      onPushDetail: () =>
+          Get.toNamed('/subscription')
+              ?.whenComplete(() => _autoRefresh(controller.subCtr!)),
     );
   }
 

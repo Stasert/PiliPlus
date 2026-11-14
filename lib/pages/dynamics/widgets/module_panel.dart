@@ -21,15 +21,8 @@ import 'package:material_ui/material_ui.dart';
 Widget noneWidget(ThemeData theme, String? tips) => Row(
   spacing: 5,
   children: [
-    Icon(
-      Icons.error,
-      size: 18,
-      color: theme.colorScheme.outline,
-    ),
-    Text(
-      tips ?? '已失效',
-      style: TextStyle(color: theme.colorScheme.outline),
-    ),
+    Icon(Icons.error, size: 18, color: theme.colorScheme.outline),
+    Text(tips ?? '已失效', style: TextStyle(color: theme.colorScheme.outline)),
   ],
 );
 
@@ -208,9 +201,7 @@ Widget module(
                   width: 45,
                   height: 45,
                   src: music.cover,
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(8),
-                  ),
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 Expanded(
                   child: Column(
@@ -218,9 +209,7 @@ Widget module(
                     children: [
                       Text(
                         music.title!,
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                        ),
+                        style: TextStyle(color: theme.colorScheme.primary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -259,11 +248,7 @@ Widget module(
                     src: major.medialist!.cover,
                   ),
                 ),
-                PBadge(
-                  right: 6,
-                  top: 6,
-                  text: major.medialist!.badge?.text,
-                ),
+                PBadge(right: 6, top: 6, text: major.medialist!.badge?.text),
               ],
             ),
             const SizedBox(width: 14),

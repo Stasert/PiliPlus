@@ -10,10 +10,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:material_ui/material_ui.dart';
 
 class WebDavSettingPage extends StatefulWidget {
-  const WebDavSettingPage({
-    super.key,
-    this.showAppBar = true,
-  });
+  const WebDavSettingPage({super.key, this.showAppBar = true});
 
   final bool showAppBar;
 

@@ -79,10 +79,7 @@ class _WhisperPageState extends State<WhisperPage> {
                             item: e,
                           ),
                           child: Row(
-                            children: [
-                              e.type.icon,
-                              Text('  ${e.title}'),
-                            ],
+                            children: [e.type.icon, Text('  ${e.title}')],
                           ),
                         ),
                       )
@@ -150,10 +147,7 @@ class _WhisperPageState extends State<WhisperPage> {
         }
         return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 
@@ -174,34 +168,29 @@ class _WhisperPageState extends State<WhisperPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Obx(
-                      () {
-                        final count = _controller.unreadCounts[index];
-                        return Badge(
-                          isLabelVisible: count > 0,
-                          label: Text(" $count "),
-                          alignment: Alignment.topRight,
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              shape: .circle,
-                              color: theme.colorScheme.onInverseSurface,
-                            ),
-                            child: Icon(
-                              item.icon,
-                              size: 20,
-                              color: theme.colorScheme.primary,
-                            ),
+                    Obx(() {
+                      final count = _controller.unreadCounts[index];
+                      return Badge(
+                        isLabelVisible: count > 0,
+                        label: Text(" $count "),
+                        alignment: Alignment.topRight,
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: .circle,
+                            color: theme.colorScheme.onInverseSurface,
                           ),
-                        );
-                      },
-                    ),
+                          child: Icon(
+                            item.icon,
+                            size: 20,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 6),
-                    Text(
-                      item.name,
-                      style: const TextStyle(fontSize: 13),
-                    ),
+                    Text(item.name, style: const TextStyle(fontSize: 13)),
                   ],
                 ),
               ),

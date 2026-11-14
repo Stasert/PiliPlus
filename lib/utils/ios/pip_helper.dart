@@ -57,7 +57,6 @@ abstract final class IOSPipHelper {
               milliseconds:
                   ctr.positionInMilliseconds + (call.arguments as int),
             ),
-            isSeek: false,
           );
         }
     }
@@ -79,6 +78,16 @@ abstract final class IOSPipHelper {
       'height': ?height,
       'autoEnter': autoEnter,
       ...state,
+    });
+  }
+
+  /// Enters PiP with the iOS system player's own layer (see
+  /// `PlayerLayerPipSession` in PipPlugin.swift); AVKit controls the player.
+  static void enterPlayer(int playerId, {required bool autoEnter}) {
+    if (autoEnter) _autoEnter = true;
+    _channel.invokeMethod('enterPlayer', {
+      'playerId': playerId,
+      'autoEnter': autoEnter,
     });
   }
 

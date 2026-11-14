@@ -201,10 +201,7 @@ class VideoCardHMemberVideo extends StatelessWidget {
             right: 12,
             width: 29,
             height: 29,
-            child: VideoPopupMenu(
-              iconSize: 17,
-              videoItem: videoItem,
-            ),
+            child: VideoPopupMenu(iconSize: 17, videoItem: videoItem),
           ),
         ],
       ),
@@ -250,14 +247,8 @@ class VideoCardHMemberVideo extends StatelessWidget {
           Row(
             spacing: 8,
             children: [
-              StatWidget(
-                type: StatType.play,
-                value: videoItem.stat.view,
-              ),
-              StatWidget(
-                type: StatType.danmaku,
-                value: videoItem.stat.danmu,
-              ),
+              StatWidget(type: StatType.play, value: videoItem.stat.view),
+              StatWidget(type: StatType.danmaku, value: videoItem.stat.danmu),
             ],
           ),
         ],

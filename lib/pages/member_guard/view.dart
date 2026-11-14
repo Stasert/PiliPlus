@@ -28,11 +28,7 @@ class MemberGuard extends StatefulWidget {
   }) {
     return Get.toNamed(
       '/memberGuard',
-      arguments: {
-        'ruid': mid,
-        'name': name,
-        'count': count,
-      },
+      arguments: {'ruid': mid, 'name': name, 'count': count},
     );
   }
 }
@@ -137,10 +133,7 @@ class _MemberGuardState extends State<MemberGuard> {
       ),
     );
     if (PlatformUtils.isDesktop) {
-      return MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: child,
-      );
+      return MouseRegion(cursor: SystemMouseCursors.click, child: child);
     }
     return child;
   }
@@ -181,12 +174,7 @@ class _MemberGuardState extends State<MemberGuard> {
       clipBehavior: .none,
       alignment: .center,
       children: [
-        NetworkImgLayer(
-          src: url,
-          width: size,
-          height: size,
-          type: .avatar,
-        ),
+        NetworkImgLayer(src: url, width: size, height: size, type: .avatar),
         NetworkImgLayer(
           type: .emote,
           width: pendentSize,

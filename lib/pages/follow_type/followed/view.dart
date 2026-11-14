@@ -15,13 +15,7 @@ class FollowedPage extends StatefulWidget {
 
   static void toFollowedPage({dynamic mid, String? name}) {
     if (mid == null) return;
-    Get.toNamed(
-      '/followed',
-      arguments: {
-        'mid': safeToInt(mid),
-        'name': name,
-      },
-    );
+    Get.toNamed('/followed', arguments: {'mid': safeToInt(mid), 'name': name});
   }
 }
 

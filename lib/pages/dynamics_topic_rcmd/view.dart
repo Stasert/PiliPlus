@@ -54,10 +54,7 @@ class _DynTopicRcmdPageState extends State<DynTopicRcmdPage> {
                     item: response[index],
                     onTap: (item) => Get.toNamed(
                       '/dynTopic',
-                      parameters: {
-                        'id': item.id.toString(),
-                        'name': item.name,
-                      },
+                      parameters: {'id': item.id.toString(), 'name': item.name},
                     ),
                   );
                 },

@@ -315,9 +315,7 @@ class _LiveAreaPageState extends State<LiveAreaPage> {
       children: [
         DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(
-              color: theme.colorScheme.outline,
-            ),
+            border: Border.all(color: theme.colorScheme.outline),
             color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.all(Radius.circular(4)),
           ),

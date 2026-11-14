@@ -95,18 +95,12 @@ class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
         }
         if (_controller.config.value case final config?) {
           sliver = SliverMainAxisGroup(
-            slivers: [
-              _buildSeriesList(config),
-              sliver,
-            ],
+            slivers: [_buildSeriesList(config), sliver],
           );
         }
         return sliver;
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 
@@ -199,19 +193,13 @@ class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
         spacing: 16,
         children: [
           child,
-          Text(
-            reminder,
-            style: TextStyle(color: colorScheme.outline),
-          ),
+          Text(reminder, style: TextStyle(color: colorScheme.outline)),
         ],
       );
     }
     return SliverFloatingHeaderWidget(
       backgroundColor: colorScheme.surface,
-      child: Padding(
-        padding: const .only(left: 14, bottom: 7),
-        child: child,
-      ),
+      child: Padding(padding: const .only(left: 14, bottom: 7), child: child),
     );
   }
 }

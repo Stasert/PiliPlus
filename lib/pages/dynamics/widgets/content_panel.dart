@@ -47,10 +47,7 @@ Widget content(
           GestureDetector(
             onTap: () => Get.toNamed(
               '/dynTopic',
-              parameters: {
-                'id': topic.id!.toString(),
-                'name': topic.name!,
-              },
+              parameters: {'id': topic.id!.toString(), 'name': topic.name!},
             ),
             child: Text.rich(
               TextSpan(

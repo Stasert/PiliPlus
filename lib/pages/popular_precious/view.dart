@@ -76,10 +76,7 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
           },
         );
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 }

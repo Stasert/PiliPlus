@@ -156,10 +156,7 @@ class _GroupPanelState extends State<GroupPanel> {
           ],
         ),
         Expanded(child: _buildBody),
-        Divider(
-          height: 1,
-          color: theme.disabledColor.withValues(alpha: 0.08),
-        ),
+        Divider(height: 1, color: theme.disabledColor.withValues(alpha: 0.08)),
         Padding(
           padding: .only(
             right: 20,

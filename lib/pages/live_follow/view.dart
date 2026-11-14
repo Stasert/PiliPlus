@@ -30,12 +30,10 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
     return SimpleScaffold(
       appBar: AppBar(
         automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-        title: Obx(
-          () {
-            final count = _controller.count.value;
-            return Text(count != null ? '$count人正在直播' : '关注直播');
-          },
-        ),
+        title: Obx(() {
+          final count = _controller.count.value;
+          return Text(count != null ? '$count人正在直播' : '关注直播');
+        }),
       ),
       body: refreshIndicator(
         onRefresh: _controller.onRefresh,
@@ -82,9 +80,7 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
                   if (index == response.length - 1) {
                     _controller.onLoadMore();
                   }
-                  return LiveCardVFollow(
-                    liveItem: response[index],
-                  );
+                  return LiveCardVFollow(liveItem: response[index]);
                 },
                 itemCount: response.length,
               )

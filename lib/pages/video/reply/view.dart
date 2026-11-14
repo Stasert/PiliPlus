@@ -131,8 +131,8 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                     feedBack();
                     controller.onReply(
                       null,
-                      oid: controller.aid,
-                      replyType: controller.videoType.replyType,
+                      oid: controller.videoCtr.aid,
+                      replyType: controller.replyType,
                       mentionItem: controller.mentionItem,
                     );
                   },
@@ -191,15 +191,12 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                   onToggleTop: (item) => controller.onToggleTop(
                     item,
                     index,
-                    controller.aid,
-                    controller.videoType.replyType,
+                    controller.videoCtr.aid,
+                    controller.replyType,
                   ),
                 );
                 if (item.id == controller.targetRootRpId) {
-                  return controller.colorAnimWrapper(
-                    colorScheme,
-                    child,
-                  );
+                  return controller.colorAnimWrapper(colorScheme, child);
                 }
                 return child;
               }
@@ -221,10 +218,7 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
         }
         return child;
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: controller.onReload);
     }
   }
 }

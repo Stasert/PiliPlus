@@ -119,11 +119,8 @@ class _DanmakuBlockPageState extends State<DanmakuBlockPage> {
           onPressed: () => showConfirmDialog(
             context: context,
             title: const Text('确定删除该规则？'),
-            onConfirm: () => _controller.danmakuFilterDel(
-              tabIndex,
-              itemIndex,
-              item.id,
-            ),
+            onConfirm: () =>
+                _controller.danmakuFilterDel(tabIndex, itemIndex, item.id),
           ),
         );
         return ListTile(

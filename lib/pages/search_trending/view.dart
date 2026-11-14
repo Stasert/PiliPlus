@@ -86,45 +86,41 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
             left: 0,
             top: 0,
             right: 0,
-            child: Obx(
-              () {
-                final scrollRatio = _scrollRatio.value;
-                final flag = maxWidth > width || scrollRatio >= 0.5;
-                return AppBar(
-                  automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                    context,
+            child: Obx(() {
+              final scrollRatio = _scrollRatio.value;
+              final flag = maxWidth > width || scrollRatio >= 0.5;
+              return AppBar(
+                automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
+                  context,
+                ),
+                title: Opacity(
+                  opacity: scrollRatio,
+                  child: Text(
+                    'bilibili热搜',
+                    style: TextStyle(color: flag ? null : Colors.white),
                   ),
-                  title: Opacity(
-                    opacity: scrollRatio,
-                    child: Text(
-                      'bilibili热搜',
-                      style: TextStyle(
-                        color: flag ? null : Colors.white,
+                ),
+                backgroundColor: theme.colorScheme.surface.withValues(
+                  alpha: scrollRatio,
+                ),
+                foregroundColor: flag ? null : Colors.white,
+                systemOverlayStyle: flag
+                    ? null
+                    : const SystemUiOverlayStyle(
+                        statusBarBrightness: Brightness.dark,
+                        statusBarIconBrightness: Brightness.light,
                       ),
-                    ),
-                  ),
-                  backgroundColor: theme.colorScheme.surface.withValues(
-                    alpha: scrollRatio,
-                  ),
-                  foregroundColor: flag ? null : Colors.white,
-                  systemOverlayStyle: flag
-                      ? null
-                      : const SystemUiOverlayStyle(
-                          statusBarBrightness: Brightness.dark,
-                          statusBarIconBrightness: Brightness.light,
-                        ),
-                  shape: scrollRatio == 1
-                      ? Border(
-                          bottom: BorderSide(
-                            color: theme.colorScheme.outline.withValues(
-                              alpha: 0.1,
-                            ),
+                shape: scrollRatio == 1
+                    ? Border(
+                        bottom: BorderSide(
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.1,
                           ),
-                        )
-                      : null,
-                );
-              },
-            ),
+                        ),
+                      )
+                    : null,
+              );
+            }),
           ),
         ],
       ),
@@ -210,10 +206,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
         }
         return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 }

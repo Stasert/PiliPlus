@@ -25,11 +25,19 @@ final class PipPlugin: NSObject, FlutterPlugin {
 
   private let channel: FlutterMethodChannel
   private var _session: AnyObject?
+  private var _playerSession: AnyObject?
 
   @available(iOS 15.0, *)
   private var session: PipSession? {
     get { _session as? PipSession }
     set { _session = newValue }
+  }
+
+  /// PiP of the iOS system player (AVPlayerLayer), see SystemPlayerPlugin.
+  @available(iOS 15.0, *)
+  private var playerSession: PlayerLayerPipSession? {
+    get { _playerSession as? PlayerLayerPipSession }
+    set { _playerSession = newValue }
   }
 
   private init(channel: FlutterMethodChannel) {
@@ -58,6 +66,7 @@ final class PipPlugin: NSObject, FlutterPlugin {
         return
       }
       let session: PipSession
+      if playerSession != nil { tearDown() }
       if let current = self.session, current.textureId == textureId {
         session = current
       } else {
@@ -85,6 +94,35 @@ final class PipPlugin: NSObject, FlutterPlugin {
         session.start()
       }
       result(nil)
+    case "enterPlayer":
+      guard let playerId = (args["playerId"] as? NSNumber)?.intValue,
+        let layer = SystemPlayerPlugin.playerLayer(for: playerId)
+      else {
+        result(FlutterError(code: "ARGS", message: "no system player view", details: nil))
+        return
+      }
+      let session: PlayerLayerPipSession
+      if let current = playerSession, current.layer === layer {
+        session = current
+      } else {
+        tearDown()
+        session = PlayerLayerPipSession(layer: layer) { [weak self] method, arguments in
+          self?.channel.invokeMethod(method, arguments: arguments)
+        }
+        session.onStop = { [weak self, weak session] in
+          guard let self, let session, self.playerSession === session,
+            !session.autoEnter
+          else { return }
+          self.tearDown()
+        }
+        playerSession = session
+      }
+      if args["autoEnter"] as? Bool == true {
+        session.autoEnter = true
+      } else {
+        session.start()
+      }
+      result(nil)
     case "update":
       session?.update(args)
       result(nil)
@@ -92,6 +130,12 @@ final class PipPlugin: NSObject, FlutterPlugin {
       if let session {
         session.autoEnter = false
         if !session.isActive {
+          tearDown()
+        }
+      }
+      if let playerSession {
+        playerSession.autoEnter = false
+        if !playerSession.isActive {
           tearDown()
         }
       }
@@ -108,6 +152,173 @@ final class PipPlugin: NSObject, FlutterPlugin {
   private func tearDown() {
     session?.invalidate()
     session = nil
+    playerSession?.invalidate()
+    playerSession = nil
+  }
+}
+
+// MARK: - System player session
+
+/// PiP for the system player: AVKit drives the AVPlayer itself (play, pause,
+/// skip), so Dart only hears about it through the player's own events.
+@available(iOS 15.0, *)
+final class PlayerLayerPipSession: NSObject, AVPictureInPictureControllerDelegate {
+  /// The layer currently in PiP or armed for auto-enter. Its view keeps the
+  /// player attached in background, see `SystemPlayerPlatformView`.
+  static weak var engagedLayer: AVPlayerLayer?
+
+  let layer: AVPlayerLayer
+  var onStop: (() -> Void)?
+  private(set) var isActive = false
+
+  var autoEnter = false {
+    didSet {
+      controller.canStartPictureInPictureAutomaticallyFromInline = autoEnter
+      updateEngaged()
+    }
+  }
+
+  private let sendEvent: (String, Any?) -> Void
+  private let controller: AVPictureInPictureController
+  private var possibleObservation: NSKeyValueObservation?
+  private var observers: [NSObjectProtocol] = []
+  private var enteredBackground = false
+  private var pendingStart = false
+  private var backgroundOnStart = false
+  private var stopRequested = false
+  private var restoring = false
+
+  init(layer: AVPlayerLayer, sendEvent: @escaping (String, Any?) -> Void) {
+    self.layer = layer
+    self.sendEvent = sendEvent
+    controller = AVPictureInPictureController(contentSource: .init(playerLayer: layer))
+    super.init()
+    controller.delegate = self
+    controller.canStartPictureInPictureAutomaticallyFromInline = false
+    possibleObservation = controller.observe(\.isPictureInPicturePossible) {
+      [weak self] _, _ in
+      DispatchQueue.main.async { self?.startIfPending() }
+    }
+    // Same as PipSession: show the video inline again once back in the app.
+    observers = [
+      NotificationCenter.default.addObserver(
+        forName: UIScene.didEnterBackgroundNotification, object: nil, queue: .main
+      ) { [weak self] _ in
+        if UIApplication.shared.applicationState == .background {
+          self?.enteredBackground = true
+        }
+      },
+      NotificationCenter.default.addObserver(
+        forName: UIScene.didActivateNotification, object: nil, queue: .main
+      ) { [weak self] _ in
+        guard let self, self.enteredBackground else { return }
+        self.enteredBackground = false
+        if self.controller.isPictureInPictureActive {
+          self.stopRequested = true
+          self.controller.stopPictureInPicture()
+        }
+      },
+    ]
+  }
+
+  private func updateEngaged() {
+    if autoEnter || isActive || pendingStart {
+      Self.engagedLayer = layer
+    } else if Self.engagedLayer === layer {
+      Self.engagedLayer = nil
+    }
+  }
+
+  /// Enters PiP and then leaves the app, like PipSession.
+  func start() {
+    guard !controller.isPictureInPictureActive else { return }
+    pendingStart = true
+    backgroundOnStart = true
+    updateEngaged()
+    startIfPending()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+      guard let self, self.pendingStart else { return }
+      self.pendingStart = false
+      self.backgroundOnStart = false
+      self.updateEngaged()
+      self.sendEvent("onStateChanged", ["active": false, "error": "PiP is not possible"])
+      self.onStop?()
+    }
+  }
+
+  private func startIfPending() {
+    guard pendingStart, controller.isPictureInPicturePossible else { return }
+    pendingStart = false
+    controller.startPictureInPicture()
+  }
+
+  func invalidate() {
+    pendingStart = false
+    possibleObservation?.invalidate()
+    observers.forEach(NotificationCenter.default.removeObserver)
+    controller.delegate = nil
+    controller.canStartPictureInPictureAutomaticallyFromInline = false
+    if controller.isPictureInPictureActive {
+      controller.stopPictureInPicture()
+    }
+    if isActive {
+      isActive = false
+      sendEvent("onStateChanged", ["active": false])
+    }
+    if Self.engagedLayer === layer { Self.engagedLayer = nil }
+  }
+
+  func pictureInPictureControllerWillStartPictureInPicture(
+    _ pictureInPictureController: AVPictureInPictureController
+  ) {
+    isActive = true
+    stopRequested = false
+    restoring = false
+    updateEngaged()
+    sendEvent("onStateChanged", ["active": true])
+  }
+
+  func pictureInPictureControllerDidStartPictureInPicture(
+    _ pictureInPictureController: AVPictureInPictureController
+  ) {
+    if backgroundOnStart {
+      backgroundOnStart = false
+      // Same as the home gesture, see PipSession.
+      UIControl().sendAction(
+        #selector(URLSessionTask.suspend), to: UIApplication.shared, for: nil)
+    }
+  }
+
+  func pictureInPictureController(
+    _ pictureInPictureController: AVPictureInPictureController,
+    failedToStartPictureInPictureWithError error: Error
+  ) {
+    isActive = false
+    backgroundOnStart = false
+    updateEngaged()
+    sendEvent("onStateChanged", ["active": false, "error": error.localizedDescription])
+    DispatchQueue.main.async { [weak self] in self?.onStop?() }
+  }
+
+  func pictureInPictureController(
+    _ pictureInPictureController: AVPictureInPictureController,
+    restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler:
+      @escaping (Bool) -> Void
+  ) {
+    restoring = true
+    completionHandler(true)
+  }
+
+  func pictureInPictureControllerDidStopPictureInPicture(
+    _ pictureInPictureController: AVPictureInPictureController
+  ) {
+    isActive = false
+    let closed = !restoring && !stopRequested
+    stopRequested = false
+    restoring = false
+    updateEngaged()
+    sendEvent("onStateChanged", ["active": false, "closed": closed])
+    DispatchQueue.main.async { [weak self] in self?.onStop?() }
   }
 }
 

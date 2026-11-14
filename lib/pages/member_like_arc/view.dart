@@ -17,11 +17,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberLikeArcPage extends StatefulWidget {
-  const MemberLikeArcPage({
-    super.key,
-    required this.mid,
-    this.name,
-  });
+  const MemberLikeArcPage({super.key, required this.mid, this.name});
 
   final dynamic mid;
   final String? name;
@@ -49,9 +45,7 @@ class _MemberLikeArcPageState extends State<MemberLikeArcPage> {
     return SimpleScaffold(
       appBar: AppBar(
         automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-        title: Text(
-          '${widget.mid == mid ? '我' : '${widget.name}'}的推荐',
-        ),
+        title: Text('${widget.mid == mid ? '我' : '${widget.name}'}的推荐'),
       ),
       body: refreshIndicator(
         onRefresh: _ctr.onRefresh,

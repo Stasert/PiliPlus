@@ -10,11 +10,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ReplySearchPage extends StatefulWidget {
-  const ReplySearchPage({
-    super.key,
-    required this.type,
-    required this.oid,
-  });
+  const ReplySearchPage({super.key, required this.type, required this.oid});
 
   final int type;
   final int oid;

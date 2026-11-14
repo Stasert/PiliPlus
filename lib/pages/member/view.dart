@@ -50,6 +50,7 @@ import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberPage extends StatefulWidget {
@@ -72,10 +73,7 @@ class _MemberPageState extends State<MemberPage> {
     super.initState();
     _mid = int.tryParse(Get.parameters['mid']!) ?? -1;
     _heroTag = Utils.makeHeroTag(_mid);
-    _userController = Get.put(
-      MemberController(mid: _mid),
-      tag: _heroTag,
-    );
+    _userController = Get.put(MemberController(mid: _mid), tag: _heroTag);
   }
 
   @override
@@ -271,9 +269,8 @@ class _MemberPageState extends State<MemberPage> {
                             iconSize: 20,
                             iconColor: scheme.outline,
                             icon: const Icon(Icons.open_in_browser),
-                            onPressed: () => PageUtils.pushDynFromId(
-                              id: e.dynamicId,
-                            ),
+                            onPressed: () =>
+                                PageUtils.pushDynFromId(id: e.dynamicId),
                           ),
                           trailing,
                         ],
@@ -361,9 +358,7 @@ class _MemberPageState extends State<MemberPage> {
               children: [
                 const Icon(Icons.block, size: 19),
                 const SizedBox(width: 10),
-                Text(
-                  _userController.relation.value != 128 ? '加入黑名单' : '移除黑名单',
-                ),
+                Text(_userController.relation.value != 128 ? '加入黑名单' : '移除黑名单'),
               ],
             ),
           ),
@@ -388,9 +383,7 @@ class _MemberPageState extends State<MemberPage> {
             children: [
               const Icon(Icons.share_outlined, size: 19),
               const SizedBox(width: 10),
-              Text(
-                _userController.account.mid != _mid ? '分享UP主' : '分享我的主页',
-              ),
+              Text(_userController.account.mid != _mid ? '分享UP主' : '分享我的主页'),
             ],
           ),
         ),
@@ -484,10 +477,8 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.toSafe(
-                const LogPage(),
-                arguments: LoginLogController(),
-              ),
+              onTap: () =>
+                  Get.toSafe(const LogPage(), arguments: LoginLogController()),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -498,10 +489,8 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.toSafe(
-                const LogPage(),
-                arguments: CoinLogController(),
-              ),
+              onTap: () =>
+                  Get.toSafe(const LogPage(), arguments: CoinLogController()),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -512,10 +501,8 @@ class _MemberPageState extends State<MemberPage> {
               ),
             ),
             PopupMenuItem(
-              onTap: () => Get.toSafe(
-                const LogPage(),
-                arguments: ExpLogController(),
-              ),
+              onTap: () =>
+                  Get.toSafe(const LogPage(), arguments: ExpLogController()),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -523,6 +510,14 @@ class _MemberPageState extends State<MemberPage> {
                   SizedBox(width: 10),
                   Text('经验记录'),
                 ],
+              ),
+            ),
+            PopupMenuItem(
+              onTap: () => Get.toNamed('/fansMedal'),
+              child: const Row(
+                spacing: 10,
+                mainAxisSize: .min,
+                children: [Icon(MdiIcons.medalOutline, size: 18), Text('粉丝勋章')],
               ),
             ),
             PopupMenuItem(
@@ -559,16 +554,9 @@ class _MemberPageState extends State<MemberPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 19,
-                    color: theme.error,
-                  ),
+                  Icon(Icons.error_outline, size: 19, color: theme.error),
                   const SizedBox(width: 10),
-                  Text(
-                    '举报',
-                    style: TextStyle(color: theme.error),
-                  ),
+                  Text('举报', style: TextStyle(color: theme.error)),
                 ],
               ),
             ),
@@ -592,22 +580,10 @@ class _MemberPageState extends State<MemberPage> {
             mid: _mid,
           ),
         ),
-        'bangumi' => MemberBangumi(
-          heroTag: _heroTag,
-          mid: _mid,
-        ),
-        'favorite' => MemberFavorite(
-          heroTag: _heroTag,
-          mid: _mid,
-        ),
-        'cheese' => MemberCheese(
-          heroTag: _heroTag,
-          mid: _mid,
-        ),
-        'shop' => MemberShop(
-          heroTag: _heroTag,
-          mid: _mid,
-        ),
+        'bangumi' => MemberBangumi(heroTag: _heroTag, mid: _mid),
+        'favorite' => MemberFavorite(heroTag: _heroTag, mid: _mid),
+        'cheese' => MemberCheese(heroTag: _heroTag, mid: _mid),
+        'shop' => MemberShop(heroTag: _heroTag, mid: _mid),
         _ => Center(child: Text(item.title ?? '')),
       };
     }).toList(),
@@ -643,9 +619,7 @@ class _MemberPageState extends State<MemberPage> {
     if (res case Success(:final response)) {
       if (response.mtime == null) return;
       _cacheFollowTime =
-          '关注时间: ${DateFormatUtils.longFormatDs.format(
-            DateTime.fromMillisecondsSinceEpoch(response.mtime! * 1000),
-          )}';
+          '关注时间: ${DateFormatUtils.longFormatDs.format(DateTime.fromMillisecondsSinceEpoch(response.mtime! * 1000))}';
       onShow();
     } else {
       res.toast();

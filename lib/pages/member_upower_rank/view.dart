@@ -16,10 +16,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
 
 class UpowerRankPage extends StatefulWidget {
-  const UpowerRankPage({
-    super.key,
-    this.privilegeType,
-  });
+  const UpowerRankPage({super.key, this.privilegeType});
 
   final int? privilegeType;
 
@@ -33,11 +30,7 @@ class UpowerRankPage extends StatefulWidget {
   }) {
     return Get.toNamed(
       '/upowerRank',
-      arguments: {
-        'mid': mid,
-        'name': name,
-        'count': count,
-      },
+      arguments: {'mid': mid, 'name': name, 'count': count},
     );
   }
 }
@@ -59,10 +52,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
       _count = params['count'];
     }
     _controller = Get.put(
-      UpowerRankController(
-        privilegeType: widget.privilegeType,
-        upMid: _upMid,
-      ),
+      UpowerRankController(privilegeType: widget.privilegeType, upMid: _upMid),
       tag: '$_upMid${widget.privilegeType}',
     );
   }
@@ -109,66 +99,62 @@ class _UpowerRankPageState extends State<UpowerRankPage>
         ),
         body: Padding(
           padding: EdgeInsets.only(left: padding.left, right: padding.right),
-          child: Obx(
-            () {
-              final tabs = _controller.tabs.value;
-              return tabs != null
-                  ? DefaultTabController(
-                      length: tabs.length,
-                      child: Builder(
-                        builder: (context) {
-                          return Column(
-                            children: [
-                              TabBar(
-                                isScrollable: true,
-                                tabAlignment: TabAlignment.start,
-                                tabs: tabs
-                                    .map(
-                                      (e) => Tab(
-                                        text:
-                                            '${e.name!}(${e.memberTotal ?? 0})',
-                                      ),
-                                    )
-                                    .toList(),
-                                onTap: (index) {
-                                  if (!DefaultTabController.of(
-                                    context,
-                                  ).indexIsChanging) {
-                                    try {
-                                      if (index == 0) {
-                                        _controller.animateToTop();
-                                      } else {
-                                        Get.find<UpowerRankController>(
-                                          tag:
-                                              '$_upMid${tabs[index].privilegeType}',
-                                        ).animateToTop();
-                                      }
-                                    } catch (_) {}
-                                  }
-                                },
-                              ),
-                              Expanded(
-                                child: tabBarView(
-                                  children: [
-                                    KeepAliveWrapper(child: child),
-                                    ...tabs
-                                        .skip(1)
-                                        .map(
-                                          (e) => UpowerRankPage(
-                                            privilegeType: e.privilegeType,
-                                          ),
+          child: Obx(() {
+            final tabs = _controller.tabs.value;
+            return tabs != null
+                ? DefaultTabController(
+                    length: tabs.length,
+                    child: Builder(
+                      builder: (context) {
+                        return Column(
+                          children: [
+                            TabBar(
+                              isScrollable: true,
+                              tabAlignment: TabAlignment.start,
+                              tabs: tabs
+                                  .map(
+                                    (e) => Tab(
+                                      text: '${e.name!}(${e.memberTotal ?? 0})',
+                                    ),
+                                  )
+                                  .toList(),
+                              onTap: (index) {
+                                if (!DefaultTabController.of(context)
+                                    .indexIsChanging) {
+                                  try {
+                                    if (index == 0) {
+                                      _controller.animateToTop();
+                                    } else {
+                                      Get.find<UpowerRankController>(
+                                        tag:
+                                            '$_upMid${tabs[index].privilegeType}',
+                                      ).animateToTop();
+                                    }
+                                  } catch (_) {}
+                                }
+                              },
+                            ),
+                            Expanded(
+                              child: tabBarView(
+                                children: [
+                                  KeepAliveWrapper(child: child),
+                                  ...tabs
+                                      .skip(1)
+                                      .map(
+                                        (e) => UpowerRankPage(
+                                          privilegeType: e.privilegeType,
                                         ),
-                                  ],
-                                ),
+                                      ),
+                                ],
                               ),
-                            ],
-                          );
-                        },
-                      ),
-                    )
-                  : child;
-            },
-          ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  )
+                : child;
+          }),
         ).constraintWidth(),
       );
     } else {

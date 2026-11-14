@@ -26,8 +26,7 @@ import 'package:material_ui/material_ui.dart';
 
 enum _BlockType implements EnumWithLabel {
   local('本地'),
-  online('在线'),
-  ;
+  online('在线');
 
   @override
   final String label;

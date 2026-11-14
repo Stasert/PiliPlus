@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/badge.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
+import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/image_viewer/hero.dart';
@@ -61,7 +62,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
       PgcIntroController.new,
       tag: widget.heroTag,
     );
-    videoDetailCtr = Get.find<VideoDetailController>(tag: widget.heroTag);
+    videoDetailCtr = introController.videoDetailCtr;
   }
 
   @override
@@ -96,7 +97,6 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
               Padding(
                 padding: const .only(top: 5),
                 child: SeasonPanel(
-                  seasons: item.seasons!,
                   pgcController: introController,
                   onSeasonChanged: () {
                     if (mounted) setState(() {});
@@ -106,8 +106,6 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
             // 番剧分集
             if (item.hasEpisodes)
               EpisodePanel(
-                item: item,
-                heroTag: widget.heroTag,
                 pgcController: introController,
                 showEpisodes: widget.showEpisodes,
                 onChangeEpisode: introController.onChangeEpisode,
@@ -115,8 +113,6 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
           ],
           if (item.hasSections)
             SectionPanel(
-              item: item,
-              heroTag: widget.heroTag,
               pgcController: introController,
               showEpisodes: widget.showEpisodes,
               onChangeEpisode: introController.onChangeEpisode,
@@ -172,16 +168,11 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
       clipBehavior: Clip.none,
       children: [
         GestureDetector(
-          onTap: () => PageUtils.imageView(
-            imgList: [SourceModel(url: item.cover!)],
-          ),
+          onTap: () =>
+              PageUtils.imageView(imgList: [SourceModel(url: item.cover!)]),
           child: fromHero(
             tag: item.cover!,
-            child: NetworkImgLayer(
-              width: 115,
-              height: 153,
-              src: item.cover!,
-            ),
+            child: NetworkImgLayer(width: 115, height: 153, src: item.cover!),
           ),
         ),
         if (item.rating != null)
@@ -221,51 +212,44 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
 
   Widget _buildInfoPanel(bool isPortrait, PgcInfoModel item) {
     if (introController.isPgc) {
-      Widget subBtn() => Obx(
-        () {
-          final isFollowed = introController.isFollowed.value;
-          final followStatus = introController.followStatus.value;
-          return FilledButton.tonal(
-            style: FilledButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
-              visualDensity: VisualDensity.compact,
-              foregroundColor: isFollowed ? colorScheme.outline : null,
-              backgroundColor: isFollowed ? colorScheme.onInverseSurface : null,
-            ),
-            onPressed: followStatus == -1
-                ? null
-                : () {
-                    if (isFollowed) {
-                      showPgcFollowDialog(
-                        context: context,
-                        type: introController.pgcType,
-                        followStatus: followStatus,
-                        onUpdateStatus: (followStatus) {
-                          if (followStatus == -1) {
-                            introController.pgcDel();
-                          } else {
-                            introController.pgcUpdate(
-                              followStatus,
-                            );
-                          }
-                        },
-                      );
-                    } else {
-                      introController.pgcAdd();
-                    }
-                  },
-            child: Text(
-              isFollowed
-                  ? '已${introController.pgcType}'
-                  : introController.pgcType,
-            ),
-          );
-        },
-      );
+      Widget subBtn() => Obx(() {
+        final isFollowed = introController.isFollowed.value;
+        final followStatus = introController.followStatus.value;
+        return FilledButton.tonal(
+          style: FilledButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            visualDensity: VisualDensity.compact,
+            foregroundColor: isFollowed ? colorScheme.outline : null,
+            backgroundColor: isFollowed ? colorScheme.onInverseSurface : null,
+          ),
+          onPressed: followStatus == -1
+              ? null
+              : () {
+                  if (isFollowed) {
+                    showPgcFollowDialog(
+                      context: context,
+                      type: introController.pgcType,
+                      followStatus: followStatus,
+                      onUpdateStatus: (followStatus) {
+                        if (followStatus == -1) {
+                          introController.pgcDel();
+                        } else {
+                          introController.pgcUpdate(followStatus);
+                        }
+                      },
+                    );
+                  } else {
+                    introController.pgcAdd();
+                  }
+                },
+          child: Text(
+            isFollowed
+                ? '已${introController.pgcType}'
+                : introController.pgcType,
+          ),
+        );
+      });
       Widget title() => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 20,
@@ -291,9 +275,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
             children: [
               if (item.areas?.isNotEmpty == true)
                 TextSpan(text: '${item.areas!.first.name!}  '),
-              TextSpan(
-                text: item.publish!.pubTimeShow!,
-              ),
+              TextSpan(text: item.publish!.pubTimeShow!),
             ],
           ),
           style: TextStyle(fontSize: 12, color: colorScheme.outline),
@@ -309,10 +291,8 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
         ],
       );
       return GestureDetector(
-        onTap: () => widget.showIntroDetail(
-          item,
-          introController.videoTags.value,
-        ),
+        onTap: () =>
+            widget.showIntroDetail(item, introController.videoTags.value),
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
           height: 153,
@@ -384,25 +364,15 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
           ),
           const SizedBox(height: 6),
         ] else if (item.upInfo?.mid != null) ...[
-          upInfo(
-            item.upInfo!.mid!,
-            item.upInfo!.avatar!,
-            item.upInfo!.uname!,
-          ),
+          upInfo(item.upInfo!.mid!, item.upInfo!.avatar!, item.upInfo!.uname!),
           const SizedBox(height: 6),
         ],
-        Text(
-          item.title!,
-          style: const TextStyle(fontSize: 16),
-        ),
+        Text(item.title!, style: const TextStyle(fontSize: 16)),
         if (item.subtitle?.isNotEmpty == true) ...[
           const SizedBox(height: 5),
           Text(
             item.subtitle!,
-            style: TextStyle(
-              fontSize: 13,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
           ),
         ],
       ],
@@ -452,6 +422,12 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
               semanticsLabel: '收藏',
               text: NumUtils.numFormat(stat.favorite),
             ),
+          ),
+          ActionItem(
+            icon: const Icon(CustomIcons.download),
+            onTap: () => videoDetailCtr.onDownload(context),
+            text: '缓存',
+            semanticsLabel: '缓存',
           ),
           Obx(
             () => ActionItem(

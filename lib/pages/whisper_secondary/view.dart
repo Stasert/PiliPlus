@@ -59,10 +59,7 @@ class _WhisperSecPageState extends State<WhisperSecPage> {
                             item: e,
                           ),
                           child: Row(
-                            children: [
-                              e.type.icon,
-                              Text('  ${e.title}'),
-                            ],
+                            children: [e.type.icon, Text('  ${e.title}')],
                           ),
                         ),
                       )
@@ -130,10 +127,7 @@ class _WhisperSecPageState extends State<WhisperSecPage> {
         }
         return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 }

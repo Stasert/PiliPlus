@@ -160,10 +160,7 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
           : DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(
-                  left: BorderSide(
-                    width: 2,
-                    color: theme.colorScheme.primary,
-                  ),
+                  left: BorderSide(width: 2, color: theme.colorScheme.primary),
                 ),
               ),
               child: _buildEditPlaceHolder(),
@@ -187,9 +184,7 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
               width: 40,
               height: 40,
               src: _pic,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(6),
-              ),
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
             ),
             const SizedBox(width: 10),
           ],
@@ -206,11 +201,7 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
                       fontSize: 13,
                     ),
                   ),
-                Text(
-                  _text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(_text, maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -391,18 +382,12 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
 
   List<Widget> _buildDismiss() => [
     const SizedBox(height: 10),
-    Divider(
-      height: 1,
-      color: theme.colorScheme.outline.withValues(alpha: 0.1),
-    ),
+    Divider(height: 1, color: theme.colorScheme.outline.withValues(alpha: 0.1)),
     ListTile(
       dense: true,
       onTap: Get.back,
       title: Center(
-        child: Text(
-          '取消',
-          style: TextStyle(color: theme.colorScheme.outline),
-        ),
+        child: Text('取消', style: TextStyle(color: theme.colorScheme.outline)),
       ),
     ),
     SizedBox(height: 10 + MediaQuery.viewPaddingOf(context).bottom),
@@ -421,29 +406,23 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
           "biz_id": item.modules.moduleAuthor!.mid.toString(),
         },
         {"raw_text": ":", "type": 1, "biz_id": ""},
-        ...item.modules.moduleDynamic!.desc!.richTextNodes!.map(
-          (e) {
-            int type;
-            String bizId;
-            switch (e.type) {
-              case 'RICH_TEXT_NODE_TYPE_EMOJI':
-                type = 9;
-                bizId = '';
-              case 'RICH_TEXT_NODE_TYPE_AT':
-                type = 2;
-                bizId = e.rid ?? '';
-              case 'RICH_TEXT_NODE_TYPE_TEXT':
-              default:
-                type = 1;
-                bizId = '';
-            }
-            return {
-              "raw_text": e.origText,
-              "type": type,
-              "biz_id": bizId,
-            };
-          },
-        ),
+        ...item.modules.moduleDynamic!.desc!.richTextNodes!.map((e) {
+          int type;
+          String bizId;
+          switch (e.type) {
+            case 'RICH_TEXT_NODE_TYPE_EMOJI':
+              type = 9;
+              bizId = '';
+            case 'RICH_TEXT_NODE_TYPE_AT':
+              type = 2;
+              bizId = e.rid ?? '';
+            case 'RICH_TEXT_NODE_TYPE_TEXT':
+            default:
+              type = 1;
+              bizId = '';
+          }
+          return {"raw_text": e.origText, "type": type, "biz_id": bizId};
+        }),
       ];
     } catch (_) {
       return null;
@@ -501,10 +480,7 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
       widget.onSuccess?.call();
       final id = response?['dyn_id'];
       RequestUtils.insertCreatedDyn(id);
-      RequestUtils.checkCreatedDyn(
-        id: id,
-        dynText: editController.rawText,
-      );
+      RequestUtils.checkCreatedDyn(id: id, dynText: editController.rawText);
     } else {
       res.toast();
     }

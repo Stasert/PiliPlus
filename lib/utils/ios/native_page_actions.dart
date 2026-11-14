@@ -9,6 +9,11 @@ class NativePageAction {
     this.selected = false,
     this.enabled = true,
     this.badge,
+    this.selectedColor,
+    this.standalone = false,
+    this.symbol,
+    this.image,
+    this.group,
   });
 
   final String id;
@@ -17,6 +22,11 @@ class NativePageAction {
   final bool selected;
   final bool enabled;
   final String? badge;
+  final int? selectedColor;
+  final bool standalone;
+  final String? symbol;
+  final String? image;
+  final String? group;
 
   Map<String, Object> toMap() => {
     'id': id,
@@ -25,6 +35,11 @@ class NativePageAction {
     'selected': selected,
     'enabled': enabled,
     'badge': ?badge,
+    'selectedColor': ?selectedColor,
+    if (standalone) 'standalone': true,
+    'symbol': ?symbol,
+    'image': ?image,
+    'group': ?group,
   };
 }
 

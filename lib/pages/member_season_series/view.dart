@@ -16,11 +16,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SeasonSeriesPage extends StatefulWidget {
-  const SeasonSeriesPage({
-    super.key,
-    required this.mid,
-    this.heroTag,
-  });
+  const SeasonSeriesPage({super.key, required this.mid, this.heroTag});
 
   final int mid;
   final String? heroTag;
@@ -55,9 +51,7 @@ class _SeasonSeriesPageState extends State<SeasonSeriesPage>
           padding: EdgeInsets.only(
             bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
           ),
-          sliver: Obx(
-            () => _buildBody(_controller.loadingState.value),
-          ),
+          sliver: Obx(() => _buildBody(_controller.loadingState.value)),
         ),
       ],
     );

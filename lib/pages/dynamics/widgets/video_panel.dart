@@ -85,10 +85,7 @@ Widget videoSeasonWidget(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black54,
-                      ],
+                      colors: [Colors.transparent, Colors.black54],
                     ),
                     borderRadius: .vertical(bottom: Style.imgRadius),
                   ),

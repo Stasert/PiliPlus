@@ -280,6 +280,12 @@ List<SettingsModel> get playSettings => [
     setKey: SettingBoxKey.keyboardControl,
     defaultVal: true,
   ),
+  const SwitchModel(
+    title: '自动佩戴直播间粉丝牌',
+    leading: Icon(MdiIcons.medalOutline),
+    setKey: SettingBoxKey.autoWearMedal,
+    defaultVal: false,
+  ),
   PopupModel(
     title: 'SuperChat (醒目留言) 显示类型',
     leading: const Icon(Icons.live_tv),
@@ -432,10 +438,7 @@ Future<void> _showSubtitleDialog(
     ),
   );
   if (res != null) {
-    await GStorage.setting.put(
-      SettingBoxKey.subtitlePreferenceV2,
-      res.index,
-    );
+    await GStorage.setting.put(SettingBoxKey.subtitlePreferenceV2, res.index);
     setState();
   }
 }
@@ -498,10 +501,7 @@ Future<void> showPlayerVolumeDialog(
   );
 }
 
-Future<void> _showMaxVolumeDialog(
-  BuildContext context,
-  VoidCallback setState,
-) {
+Future<void> _showMaxVolumeDialog(BuildContext context, VoidCallback setState) {
   return showVolumeDialog(
     context,
     title: const Text('最高音量'),
@@ -557,10 +557,7 @@ Future<void> _showSuperResolutionDialog(
     ),
   );
   if (res != null) {
-    await GStorage.setting.put(
-      SettingBoxKey.superResolutionType,
-      res.index,
-    );
+    await GStorage.setting.put(SettingBoxKey.superResolutionType, res.index);
     setState();
   }
 }
@@ -619,10 +616,7 @@ Future<void> audioNormalization(
             spacing: 16,
             children: [
               const Text('等同于 --lavfi-complex="[aid1] 参数 [ao]"'),
-              TextField(
-                autofocus: true,
-                onChanged: (value) => param = value,
-              ),
+              TextField(autofocus: true, onChanged: (value) => param = value),
             ],
           ),
           actions: [

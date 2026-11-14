@@ -21,11 +21,7 @@ class _FavPgcPageState extends State<FavPgcPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: 3,
-      vsync: this,
-      initialIndex: 1,
-    );
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
   }
 
   @override
@@ -69,9 +65,8 @@ class _FavPgcPageState extends State<FavPgcPage>
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelStyle:
-                    TabBarTheme.of(
-                      context,
-                    ).labelStyle?.copyWith(fontSize: 14) ??
+                    TabBarTheme.of(context).labelStyle
+                        ?.copyWith(fontSize: 14) ??
                     const TextStyle(fontSize: 14),
                 labelColor: theme.colorScheme.onSecondaryContainer,
                 unselectedLabelColor: theme.colorScheme.outline,
@@ -110,10 +105,8 @@ class _FavPgcPageState extends State<FavPgcPage>
             physics: const NeverScrollableScrollPhysics(),
             children: List.generate(
               3,
-              (index) => FavPgcChildPage(
-                type: widget.type,
-                followStatus: index + 1,
-              ),
+              (index) =>
+                  FavPgcChildPage(type: widget.type, followStatus: index + 1),
             ),
           ),
         ),

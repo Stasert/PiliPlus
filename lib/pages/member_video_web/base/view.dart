@@ -48,20 +48,18 @@ abstract class BaseVideoWebState<
         automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
         title: Text(name),
         actions: [
-          Obx(
-            () {
-              final order = controller.order.value;
-              return PopupMenuButton<V>(
-                tooltip: '排序',
-                icon: const Icon(Icons.sort),
-                initialValue: order,
-                onSelected: controller.queryBySort,
-                itemBuilder: (_) => values
-                    .map((e) => PopupMenuItem(value: e, child: Text(e.label)))
-                    .toList(),
-              );
-            },
-          ),
+          Obx(() {
+            final order = controller.order.value;
+            return PopupMenuButton<V>(
+              tooltip: '排序',
+              icon: const Icon(Icons.sort),
+              initialValue: order,
+              onSelected: controller.queryBySort,
+              itemBuilder: (_) => values
+                  .map((e) => PopupMenuItem(value: e, child: Text(e.label)))
+                  .toList(),
+            );
+          }),
           const SizedBox(width: 6),
         ],
       ),
@@ -185,11 +183,7 @@ abstract class BaseVideoWebState<
     return Row(
       spacing: 6,
       mainAxisSize: .min,
-      children: [
-        backwardBtn,
-        pageIndicator,
-        forwardBtn,
-      ],
+      children: [backwardBtn, pageIndicator, forwardBtn],
     );
   }
 

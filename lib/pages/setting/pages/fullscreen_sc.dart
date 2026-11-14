@@ -116,10 +116,7 @@ class _FullScreenScState extends State<FullScreenSc> {
             Transform.scale(
               scale: 0.8,
               alignment: .centerRight,
-              child: Switch(
-                value: _enable,
-                onChanged: _onEnableChanged,
-              ),
+              child: Switch(value: _enable, onChanged: _onEnableChanged),
             ),
           ],
         ),
@@ -219,10 +216,7 @@ class _FullScreenScState extends State<FullScreenSc> {
           SizedBox(
             width: _width,
             child: IgnorePointer(
-              child: SuperChatCard(
-                item: _randomSC,
-                persistentSC: true,
-              ),
+              child: SuperChatCard(item: _randomSC, persistentSC: true),
             ),
           ),
           Positioned(

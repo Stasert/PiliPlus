@@ -12,5 +12,5 @@ enum InnerVideoDetailLayout with EnumWithLabel {
   static InnerVideoDetailLayout fromStorage(Object? value) =>
       value is int && value >= 0 && value < values.length
       ? values[value]
-      : split;
+      : auto;
 }

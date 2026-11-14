@@ -3,11 +3,11 @@ import 'dart:io' show Platform;
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart'
+    show debugPrint, kDebugMode, visibleForTesting;
 import 'package:flutter/widgets.dart'
     show WidgetsBinding, WidgetsBindingObserver;
 
@@ -20,7 +20,7 @@ import 'package:flutter/widgets.dart'
 /// - 展开（内屏）：启用横屏适配（平板布局，允许任意方向）。
 ///   注意：iPhone Duo 内屏不遵守 supportedInterfaceOrientations，
 ///   方向锁定在内屏上无效，布局只能依据窗口尺寸。
-/// - 合上（外屏）：恢复手机布局，已识别的折叠设备仍由系统选择方向。
+/// - 合上（外屏）：恢复手机布局并锁定竖屏，与普通 iPhone 一致。
 ///
 /// 非折叠 iPhone 的最短边永远 < 600，自动模式下行为与关闭横屏适配完全相同。
 abstract final class IOSFoldableHelper {
@@ -29,44 +29,40 @@ abstract final class IOSFoldableHelper {
   /// 当前设备是否为 iPhone（不含 iPad）
   static bool get isIPhone => _isIPhone;
 
-  /// 横屏适配是否由折叠状态自动决定
+  static int _systemMajorVersion = 0;
+
+  /// iOS 主版本号，未知时为 0
+  static int get systemMajorVersion => _systemMajorVersion;
+
+  @visibleForTesting
+  static set debugIsIPhone(bool value) => _isIPhone = value;
+
+  /// 横屏适配是否由折叠状态自动决定。
+  /// 尚未选择过时，已手动开启旧开关的用户保持开启
   static bool get isAuto =>
       _isIPhone &&
       GStorage.setting.get(
         SettingBoxKey.foldableAutoHorizontal,
-        defaultValue: true,
+        defaultValue:
+            GStorage.setting.get(SettingBoxKey.horizontalScreen) != true,
       );
 
   /// 当前是否处于展开状态（窗口最短边 >= 600pt）
   static bool get isUnfolded => DeviceUtils.isTablet;
 
   static bool? _lastUnfolded;
-  static bool _nativeAutomaticOrientation = false;
-
-  /// Physical-device notifications must not replace the normal Duo scene policy.
-  static bool get usesSystemOrientation =>
-      isAuto &&
-      (_nativeAutomaticOrientation || IOSNativeTabBar.rightRailDevice.value);
 
   static Future<void> init() async {
     if (!Platform.isIOS) return;
     try {
       final info = await DeviceInfoPlugin().iosInfo;
       _isIPhone = info.model.toLowerCase().contains('iphone');
+      _systemMajorVersion =
+          int.tryParse(info.systemVersion.split('.').first) ?? 0;
     } catch (e) {
       if (kDebugMode) debugPrint('IOSFoldableHelper init: $e');
     }
     if (!_isIPhone) return;
-    IOSNativeTabBar.onFoldOrientationChanged = (needsSync) {
-      // Recognition can race the initial unsupported-device response. Retry
-      // once even if Flutter had no restriction at the instant of recognition.
-      final newlyRecognized = !_nativeAutomaticOrientation;
-      _nativeAutomaticOrientation = true;
-      if (isAuto &&
-          !IOSNativeTabBar.playerFullScreen.value &&
-          (newlyRecognized || needsSync))
-        applyOrientation();
-    };
     WidgetsBinding.instance.addObserver(_FoldObserver());
   }
 
@@ -100,40 +96,9 @@ abstract final class IOSFoldableHelper {
     return pending;
   }
 
-  static Future<void>? _orientationUpdate;
-  static bool _orientationRequested = false;
-
-  /// Coalesce native callbacks/metrics while retaining the latest setting.
-  static Future<void> applyOrientation() {
-    _orientationRequested = true;
-    return _orientationUpdate ??= _drainOrientationUpdates().whenComplete(() {
-      _orientationUpdate = null;
-    });
-  }
-
-  static Future<void> _drainOrientationUpdates() async {
-    while (_orientationRequested) {
-      _orientationRequested = false;
-      await _applyOrientation();
-    }
-  }
-
-  static Future<void> _applyOrientation() async {
-    final automatic = isAuto;
-    final handled =
-        _isIPhone && await IOSNativeTabBar.applyFoldableOrientation(automatic);
-    _nativeAutomaticOrientation = automatic && handled;
-    if (handled) {
-      return;
-    }
-    final horizontal = automatic
-        ? isUnfolded
-        : GStorage.setting.get(
-            SettingBoxKey.horizontalScreen,
-            defaultValue: DeviceUtils.isTablet,
-          ) as bool;
-    await (horizontal ? fullMode() : portraitUpMode());
-  }
+  /// 按当前折叠状态设置允许的屏幕方向
+  static Future<void>? applyOrientation() =>
+      isUnfolded ? fullMode() : portraitUpMode();
 }
 
 class _FoldObserver with WidgetsBindingObserver {

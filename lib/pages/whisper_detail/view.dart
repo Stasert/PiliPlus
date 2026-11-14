@@ -38,10 +38,7 @@ const _kMaxExtent = 625.0;
 const _kConstraints = BoxConstraints(maxWidth: _kMaxExtent);
 
 class WhisperDetailPage extends CommonRichTextPubPage {
-  const WhisperDetailPage({
-    super.key,
-    super.autofocus = false,
-  });
+  const WhisperDetailPage({super.key, super.autofocus = false});
 
   @override
   State<WhisperDetailPage> createState() => _WhisperDetailPageState();
@@ -307,78 +304,74 @@ class _WhisperDetailPageState
               // inputFormatters: [LengthLimitingTextInputFormatter(500)],
             ),
           ),
-          Obx(
-            () {
-              final enablePublish = this.enablePublish.value;
-              return IconButton(
-                onPressed: () async {
-                  if (enablePublish) {
-                    _whisperDetailController.sendMsg(
-                      message: editController.rawText,
-                      onClearText: () {
-                        editController.clear();
-                        this.enablePublish.value = false;
-                      },
+          Obx(() {
+            final enablePublish = this.enablePublish.value;
+            return IconButton(
+              onPressed: () async {
+                if (enablePublish) {
+                  _whisperDetailController.sendMsg(
+                    message: editController.rawText,
+                    onClearText: () {
+                      editController.clear();
+                      this.enablePublish.value = false;
+                    },
+                  );
+                } else {
+                  try {
+                    final pickedFile = await imagePicker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 100,
+                      requestFullMetadata: false,
                     );
-                  } else {
-                    try {
-                      final pickedFile = await imagePicker.pickImage(
-                        source: ImageSource.gallery,
-                        imageQuality: 100,
-                        requestFullMetadata: false,
+                    if (pickedFile != null) {
+                      final path = pickedFile.path;
+                      SmartDialog.showLoading(msg: '正在上传图片');
+                      final result = await MsgHttp.uploadBfs(
+                        path: path,
+                        biz: 'im',
                       );
-                      if (pickedFile != null) {
-                        final path = pickedFile.path;
-                        SmartDialog.showLoading(msg: '正在上传图片');
-                        final result = await MsgHttp.uploadBfs(
-                          path: path,
-                          biz: 'im',
-                        );
-                        if (result case Success(:final response)) {
-                          final mimeType =
-                              lookupMimeType(
-                                path,
-                              )?.split('/').elementAtOrNull(1) ??
-                              'jpg';
-                          final picMsg = {
-                            'url': response.imageUrl,
-                            'height': response.imageHeight,
-                            'width': response.imageWidth,
-                            'imageType': mimeType,
-                            'original': 1,
-                            'size': response.imgSize,
-                          };
-                          SmartDialog.showLoading(msg: '正在发送');
-                          await _whisperDetailController
-                              .sendMsg(
-                                picMsg: picMsg,
-                                onClearText: editController.clear,
-                              )
-                              .whenComplete(() {
-                                if (PlatformUtils.isMobile) {
-                                  File(path).tryDel();
-                                }
-                              });
-                        } else {
-                          SmartDialog.dismiss();
-                          result.toast();
-                          return;
-                        }
+                      if (result case Success(:final response)) {
+                        final mimeType =
+                            lookupMimeType(path)
+                                ?.split('/')
+                                .elementAtOrNull(1) ??
+                            'jpg';
+                        final picMsg = {
+                          'url': response.imageUrl,
+                          'height': response.imageHeight,
+                          'width': response.imageWidth,
+                          'imageType': mimeType,
+                          'original': 1,
+                          'size': response.imgSize,
+                        };
+                        SmartDialog.showLoading(msg: '正在发送');
+                        await _whisperDetailController
+                            .sendMsg(
+                              picMsg: picMsg,
+                              onClearText: editController.clear,
+                            )
+                            .whenComplete(() {
+                              if (PlatformUtils.isMobile) {
+                                File(path).tryDel();
+                              }
+                            });
+                      } else {
+                        SmartDialog.dismiss();
+                        result.toast();
+                        return;
                       }
-                    } catch (e) {
-                      SmartDialog.showToast(e.toString());
                     }
+                  } catch (e) {
+                    SmartDialog.showToast(e.toString());
                   }
-                },
-                icon: Icon(
-                  enablePublish
-                      ? Icons.send
-                      : Icons.add_photo_alternate_outlined,
-                ),
-                tooltip: enablePublish ? '发送' : '图片',
-              );
-            },
-          ),
+                }
+              },
+              icon: Icon(
+                enablePublish ? Icons.send : Icons.add_photo_alternate_outlined,
+              ),
+              tooltip: enablePublish ? '发送' : '图片',
+            );
+          }),
         ],
       ),
     );

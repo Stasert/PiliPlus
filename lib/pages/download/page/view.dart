@@ -102,10 +102,10 @@ class _DownloadPagePageState extends State<DownloadPagePage>
   }
 
   @override
-  Future<void> onUpdate(
+  Future<bool> onUpdate(
     Future<bool> Function(BiliDownloadEntryInfo e) toElement,
   ) async {
-    if (checkUpdateCount(checkedCount)) return;
+    if (checkUpdateCount(checkedCount)) return false;
 
     bool dismiss = false;
     SmartDialog.showLoading(
@@ -116,27 +116,26 @@ class _DownloadPagePageState extends State<DownloadPagePage>
     );
 
     bool isSuccess = true;
-    for (final chunk in allChecked.mapChunked(
-      kUpdateConcurrency,
-      (page) async {
-        bool isSuccess = true;
-        for (final chunk in page.entries.mapChunked(
-          kUpdateConcurrency,
-          toElement,
-        )) {
-          final res = await Future.wait(chunk);
-          if (res.any((e) => !e)) isSuccess = false;
-          if (dismiss) break;
-        }
-        return isSuccess;
-      },
-    )) {
+    for (final chunk in allChecked.mapChunked(kUpdateConcurrency, (page) async {
+      bool isSuccess = true;
+      for (final chunk in page.entries.mapChunked(
+        kUpdateConcurrency,
+        toElement,
+      )) {
+        final res = await Future.wait(chunk);
+        if (res.any((e) => !e)) isSuccess = false;
+        if (dismiss) break;
+      }
+      return isSuccess;
+    })) {
       final res = await Future.wait(chunk);
       if (res.any((e) => !e)) isSuccess = false;
       if (dismiss) break;
     }
 
     toastUpdateResult(dismiss, isSuccess);
+
+    return isSuccess;
   }
 
   @override
@@ -213,6 +212,10 @@ class _DownloadPagePageState extends State<DownloadPagePage>
                           enableMultiSelect: enableMultiSelect,
                           progress: widget.progress,
                           updatePageDm: updatePageDm,
+                          updatePageSeg: updatePageSeg,
+                          updatePageVolume: updatePageVolume,
+                          updatePagePlayInfo: updatePagePlayInfo,
+                          updatePageSeasonInfo: updatePageSeasonInfo,
                         );
                       },
                       itemCount: _pages.length,

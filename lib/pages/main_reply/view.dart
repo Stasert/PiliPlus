@@ -31,17 +31,8 @@ class MainReplyPage extends StatefulWidget {
   @override
   State<MainReplyPage> createState() => _MainReplyPageState();
 
-  static void toMainReplyPage({
-    required int oid,
-    required int replyType,
-  }) {
-    Get.toNamed(
-      '/mainReply',
-      arguments: {
-        'oid': oid,
-        'replyType': replyType,
-      },
-    );
+  static void toMainReplyPage({required int oid, required int replyType}) {
+    Get.toNamed('/mainReply', arguments: {'oid': oid, 'replyType': replyType});
   }
 }
 
@@ -77,10 +68,7 @@ class _MainReplyPageState extends State<MainReplyPage>
         child: refreshIndicator(
           onRefresh: controller.onRefresh,
           child: Padding(
-            padding: EdgeInsets.only(
-              left: padding.left,
-              right: padding.right,
-            ),
+            padding: EdgeInsets.only(left: padding.left, right: padding.right),
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -173,14 +161,10 @@ class _MainReplyPageState extends State<MainReplyPage>
         child: Row(
           mainAxisAlignment: .spaceBetween,
           children: [
-            Obx(
-              () {
-                final count = controller.count.value;
-                return Text(
-                  '${count == -1 ? 0 : NumUtils.numFormat(count)}条回复',
-                );
-              },
-            ),
+            Obx(() {
+              final count = controller.count.value;
+              return Text('${count == -1 ? 0 : NumUtils.numFormat(count)}条回复');
+            }),
             TextButton.icon(
               style: Style.buttonStyle,
               onPressed: controller.queryBySort,

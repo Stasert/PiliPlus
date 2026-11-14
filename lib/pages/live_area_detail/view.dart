@@ -222,10 +222,7 @@ class _LiveAreaDetailPageState extends State<LiveAreaDetailPage> {
                 Expanded(
                   child: GridView.builder(
                     controller: scrollController,
-                    padding: EdgeInsets.only(
-                      top: 12,
-                      bottom: bottom + 100,
-                    ),
+                    padding: EdgeInsets.only(top: 12, bottom: bottom + 100),
                     itemCount: list.length,
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(

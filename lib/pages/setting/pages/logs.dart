@@ -1,7 +1,5 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:async' show Timer;
-import 'dart:convert' show jsonDecode, JsonEncoder;
+import 'dart:convert' show jsonDecode;
 
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
@@ -75,16 +73,9 @@ class _LogsPageState extends State<LogsPage> {
     }
   }
 
-  Future<void> copyLogs({bool orientationOnly = false}) async {
-    final orientation = await IOSNativeTabBar.foldOrientationDiagnostics();
-    final diagnostic = orientation.isEmpty
-        ? ''
-        : '\n\n折叠方向时序\n${const JsonEncoder.withIndent('  ').convert(orientation)}';
-    final content = orientationOnly
-        ? '当前构建\n${const JsonEncoder.withIndent('  ').convert(_deviceInfo?.item.$3 ?? const {})}'
-        : logsContent.join('\n\n');
+  void copyLogs() {
     Utils.copyText(
-      '```\n$content$diagnostic\n```',
+      '```\n${logsContent.join('\n\n')}```',
       needToast: false,
     );
     if (mounted) {
@@ -117,7 +108,6 @@ class _LogsPageState extends State<LogsPage> {
     final padding = MediaQuery.viewPaddingOf(context);
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
         title: const Text('日志'),
         actions: [
           PopupMenuButton(
@@ -150,14 +140,9 @@ class _LogsPageState extends State<LogsPage> {
                 child: Text('${enableLog ? '关闭' : '开启'}日志'),
               ),
               PopupMenuItem(
-                onTap: () => copyLogs(),
+                onTap: copyLogs,
                 child: const Text('复制日志'),
               ),
-              if (IOSNativeTabBar.rightRailDevice.value)
-                PopupMenuItem(
-                  onTap: () => copyLogs(orientationOnly: true),
-                  child: const Text('复制方向记录'),
-                ),
               PopupMenuItem(
                 onTap: () =>
                     PageUtils.launchURL('${Constants.sourceCodeUrl}/issues'),

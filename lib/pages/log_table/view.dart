@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -22,10 +21,7 @@ class _LogPageState<T> extends State<LogPage<T>> {
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
     return SimpleScaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-        title: Text(_controller.title),
-      ),
+      appBar: AppBar(title: Text(_controller.title)),
       body: CustomScrollView(
         slivers: [
           SliverPadding(

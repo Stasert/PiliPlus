@@ -10,11 +10,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FavPanel extends StatefulWidget {
-  const FavPanel({
-    super.key,
-    required this.ctr,
-    this.scrollController,
-  });
+  const FavPanel({super.key, required this.ctr, this.scrollController});
 
   final FavMixin ctr;
   final ScrollController? scrollController;
@@ -90,10 +86,7 @@ class _FavPanelState extends State<FavPanel> {
                                 )
                               : const Icon(Icons.folder_outlined)
                         : isFull
-                        ? Icon(
-                            Icons.lock_outline,
-                            color: colorScheme.outline,
-                          )
+                        ? Icon(Icons.lock_outline, color: colorScheme.outline)
                         : const Icon(Icons.lock_outline),
                     minLeadingWidth: 0,
                     title: Text(item.title),
@@ -173,10 +166,7 @@ class _FavPanelState extends State<FavPanel> {
           ],
         ),
         Expanded(child: _buildBody),
-        Divider(
-          height: 1,
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
+        Divider(height: 1, color: colorScheme.outline.withValues(alpha: 0.1)),
         Padding(
           padding: .only(
             left: 20,

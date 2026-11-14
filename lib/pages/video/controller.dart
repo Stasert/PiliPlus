@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:convert' show utf8, jsonDecode;
+import 'dart:io' show Platform, File;
 import 'dart:math' show min;
 import 'dart:ui';
 
@@ -47,9 +48,12 @@ import 'package:PiliPlus/pages/video/post_panel/view.dart';
 import 'package:PiliPlus/pages/video/send_danmaku/view.dart';
 import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
+import 'package:PiliPlus/plugin/pl_player/models/data_status.dart';
 import 'package:PiliPlus/plugin/pl_player/models/data_source.dart';
 import 'package:PiliPlus/plugin/pl_player/models/heart_beat_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
+import 'package:PiliPlus/plugin/pl_player/subtitle_cues.dart';
+import 'package:PiliPlus/plugin/pl_player/system_player.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
@@ -57,11 +61,14 @@ import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/nested_scroll_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/reply_scheme_helper.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/subtitle_utils.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/video_utils.dart';
@@ -69,13 +76,16 @@ import 'package:collection/collection.dart';
 import 'package:dio/dio.dart' show Options;
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
     show ExtendedNestedScrollViewState;
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, compute;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart' hide Subtitle;
+import 'package:path/path.dart' as path;
+
+typedef SubtitleData = ({bool isData, String id});
 
 class VideoDetailController extends GetxController
     with GetTickerProviderStateMixin, BlockMixin {
@@ -177,9 +187,6 @@ class VideoDetailController extends GetxController
   ScrollController? introScrollCtr;
   ScrollController get effectiveIntroScrollCtr =>
       introScrollCtr ??= ScrollController();
-
-  int? seasonCid;
-  late final RxInt seasonIndex = 0.obs;
 
   PlayerStatus? playerStatus;
 
@@ -354,7 +361,30 @@ class VideoDetailController extends GetxController
 
   void initFileSource(BiliDownloadEntryInfo entry) {
     this.entry = entry;
+    // block
     _initLocalSkipIfNeeded();
+    // viewPoint
+    if (plPlayerController.showViewPoints) {
+      final viewPoints = entry.viewPoints;
+      if (viewPoints != null && viewPoints.isNotEmpty) {
+        try {
+          final duration = (entry.totalTimeMilli / 1000);
+          viewPointList.value = viewPoints
+              .map((e) => e.toSegment(duration))
+              .toList();
+        } catch (_) {
+          if (kDebugMode) rethrow;
+        }
+      }
+    }
+    // subtitle
+    final subtitles = entry.subtitles;
+    if (subtitles != null && subtitles.isNotEmpty) {
+      this.subtitles.assignAll(subtitles);
+      vttSubtitlesIndex.value = 0;
+    }
+    // volume
+    volume = entry.volume;
     firstVideo = VideoItem(
       id: entry.preferedVideoQuality,
       quality: VideoQuality.fromCode(entry.preferedVideoQuality),
@@ -551,6 +581,12 @@ class VideoDetailController extends GetxController
   BlockConfigMixin get blockConfig => plPlayerController;
   @override
   Player? get player => plPlayerController.videoPlayerController;
+
+  @override
+  Stream<Duration> get positionStream => plPlayerController.positionStream;
+
+  @override
+  Stream<Duration> get bufferStream => plPlayerController.bufferStream;
   @override
   bool get isFullScreen => plPlayerController.isFullScreen.value;
   @override
@@ -562,8 +598,7 @@ class VideoDetailController extends GetxController
   int get currPosInMilliseconds =>
       defaultST?.inMilliseconds ?? plPlayerController.positionInMilliseconds;
   @override
-  Future<void> seekTo(Duration duration, {required bool isSeek}) =>
-      plPlayerController.seekTo(duration, isSeek: isSeek);
+  Future<void> seekTo(Duration duration) => plPlayerController.seekTo(duration);
 
   @override
   Widget buildItem(Object item, Animation<double> animation) {
@@ -607,7 +642,7 @@ class VideoDetailController extends GetxController
                   }
                   onRemoveItem(listData.indexOf(item), item);
                 } else if (item is SegmentModel) {
-                  onSkip(item, isSeek: false);
+                  onSkip(item);
                   onRemoveItem(listData.indexOf(item), item);
                 }
               },
@@ -694,12 +729,120 @@ class VideoDetailController extends GetxController
     return bestVideo ?? videoList.first;
   }
 
+  static final Map<String, bool> _hwDecodeSupport = {};
+
+  static const _hdrQualities = {
+    125, // HDR 真彩
+    126, // 杜比视界
+    129, // HDR Vivid
+  };
+
+  /// iOS: play with the system player (AVPlayer) instead of mpv when the
+  /// settings ask for it. mpv only outputs SDR on iOS, so HDR / Dolby Vision
+  /// look wrong there. Returns null to keep mpv.
+  Future<SystemPlayerSource?> _systemPlayerSource() async {
+    if (!SystemPlayer.isSupported || plPlayerController.onlyPlayAudio.value) {
+      return null;
+    }
+    if (isFileSource) return _localSystemPlayerSource();
+    final codecs = firstVideo.codecs ?? '';
+    final isHdr =
+        _hdrQualities.contains(firstVideo.quality.code) ||
+        codecs.startsWith('dvh1') ||
+        codecs.startsWith('dvhe');
+    if (!(Pref.systemPlayerAll || (isHdr && Pref.systemPlayerHdr))) {
+      return null;
+    }
+    void skip(String reason) {
+      if (kDebugMode) debugPrint('system player skipped: $reason ($codecs)');
+    }
+
+    // Old FLV / MP4 (durl) streams: no DASH files to build a playlist from,
+    // and AVPlayer cannot play FLV. bilibili has all but retired them.
+    if (data.dash == null) {
+      skip('not DASH');
+      return null;
+    }
+    // AVPlayer has no software AV1 decoder.
+    final family = codecs.length >= 4 ? codecs.substring(0, 4) : codecs;
+    if (family == 'av01') {
+      final supported = _hwDecodeSupport[family] ??=
+          await SystemPlayer.supportsHardwareDecode(family);
+      if (!supported) {
+        skip('no AV1 hardware decoder');
+        return null;
+      }
+    }
+
+    // Anything the playlist cannot be built from, or that AVPlayer then fails
+    // to play (also a stall or missing picture, see the native watchdog),
+    // falls back to mpv at the same position.
+    final video = SystemPlayerTrack.fromItem(firstVideo, videoUrl!);
+    SystemPlayerTrack? audio;
+    if (audioUrl case final url? when url.isNotEmpty) {
+      // The CDN setting may have swapped the host, so match by path. Without
+      // a match the native side finds the segment index itself.
+      final path = Uri.tryParse(url)?.path;
+      final item = data.dash?.audio?.firstWhereOrNull(
+        (e) => e.playUrls.any((u) => u == url || Uri.tryParse(u)?.path == path),
+      );
+      audio = SystemPlayerTrack.fromItem(item, url);
+    }
+    return SystemPlayerSource(
+      video: video,
+      audio: audio,
+      frameRate: double.tryParse(firstVideo.frameRate ?? ''),
+    );
+  }
+
+  /// Offline: downloads are read straight from the files by the system
+  /// player, under the same settings as online videos.
+  Future<SystemPlayerSource?> _localSystemPlayerSource() async {
+    final isHdr = _hdrQualities.contains(entry.preferedVideoQuality);
+    if (!(Pref.systemPlayerAll || (isHdr && Pref.systemPlayerHdr))) {
+      return null;
+    }
+    final dir = path.join(args['dirPath'] as String, entry.typeTag!);
+    Map? index;
+    try {
+      index = jsonDecode(
+        await File(path.join(dir, 'index.json')).readAsString(),
+      );
+    } catch (_) {}
+    // Old single-file downloads: only real MP4, not FLV.
+    if (entry.mediaType == 1) {
+      final video = File(path.join(dir, PathUtils.videoNameType1));
+      if (!video.existsSync() ||
+          (index?['format'] as String?)?.contains('mp4') != true) {
+        return null;
+      }
+      return SystemPlayerSource(video: SystemPlayerTrack.file(video.path));
+    }
+    final video = File(path.join(dir, PathUtils.videoNameType2));
+    final audio = entry.hasDashAudio
+        ? File(path.join(dir, PathUtils.audioNameType2))
+        : null;
+    if (!video.existsSync() || (audio != null && !audio.existsSync())) {
+      return null;
+    }
+    // AVPlayer has no software AV1 decoder. bilibili codecid 13 is AV1.
+    if ((index?['video'] as List?)?.firstOrNull?['codecid'] == 13 &&
+        !(_hwDecodeSupport['av01'] ??=
+            await SystemPlayer.supportsHardwareDecode('av01'))) {
+      return null;
+    }
+    return SystemPlayerSource(
+      video: SystemPlayerTrack.file(video.path),
+      audio: audio == null ? null : SystemPlayerTrack.file(audio.path),
+    );
+  }
+
   /// 更新画质、音质
   void updatePlayer() {
     final currentVideoQa = this.currentVideoQa.value;
     if (currentVideoQa == null) return;
     _autoPlay.value = true;
-    playedTime = plPlayerController.videoPlayerController?.state.position;
+    playedTime = plPlayerController.currentPosition;
     plPlayerController
       ..isBuffering.value = false
       ..buffered.value = 0;
@@ -732,13 +875,26 @@ class VideoDetailController extends GetxController
     return null;
   }
 
+  /// 所有视频页共用同一个播放器。被新页面盖住或已关闭的页面，播放地址晚到时
+  /// 不能再去改播放器，否则会换掉当前页正在播的视频，或者和当前页同时创建播放器，
+  /// 导致黑屏（有时有声音）。回到这一页时 didPopNext 会重新初始化。
+  /// 没有 owner 时（例如直播间关闭时清空了）不拦截。
+  bool get _ownsPlayer {
+    if (isClosed) return false;
+    final owner = PlPlayerController.playOwner;
+    return owner == null || owner.tag == heroTag;
+  }
+
   Future<void> playerInit({
     bool? autoplay,
     bool autoFullScreenFlag = false,
   }) async {
+    if (!_ownsPlayer || (!isFileSource && videoUrl == null)) return;
     Duration? seek = defaultST ?? playedTime;
     if (seek == .zero) seek = null;
     seek ??= getFirstSegment();
+    final systemSource = await _systemPlayerSource();
+    if (!_ownsPlayer) return;
     await plPlayerController.setDataSource(
       isFileSource
           ? FileSource(
@@ -773,9 +929,19 @@ class VideoDetailController extends GetxController
       volume: volume,
       autoFullScreenFlag: autoFullScreenFlag,
       rotate: _rotate,
+      systemSource: systemSource,
     );
 
     if (isClosed) return;
+
+    // 初始化失败时退回封面和播放按钮，点一下就能重试，而不是一直黑屏
+    if (_ownsPlayer &&
+        plPlayerController.dataStatus.value == DataStatus.error) {
+      videoState.value = false;
+      _autoPlay.value = false;
+      SmartDialog.showToast('播放器初始化失败，点击封面重试');
+      return;
+    }
 
     if (plPlayerController.enableBlock) {
       initSkip();
@@ -950,6 +1116,15 @@ class VideoDetailController extends GetxController
         }
       }
 
+      final video = dash.video;
+      if (video == null || video.isEmpty) {
+        Utils.reportError(
+          'null or empty dash video:\n'
+          'bvid: $bvid, cid: $cid, seasonId: $seasonId, epId: $epId, '
+          'videoType: $_actualVideoType',
+        );
+        return;
+      }
       final cacheVideoQa = plPlayerController.cacheVideoQa!;
       final (
         int targetQuality,
@@ -957,7 +1132,7 @@ class VideoDetailController extends GetxController
         VideoDecodeFormatType targetDecode,
         VideoItem targetVideo,
       ) = VideoUtils.findTargetVideo(
-        dash.video!,
+        video,
         cacheVideoQa,
         response.acceptQuality,
         response.supportFormats!,
@@ -1029,46 +1204,110 @@ class VideoDetailController extends GetxController
     }
   }
 
-  RxList<Subtitle> subtitles = RxList<Subtitle>();
-  final Map<int, ({bool isData, String id})> vttSubtitles = {};
-  late final vttSubtitlesIndex = (-1).obs;
   late final showVP = true.obs;
   late final viewPointList = <ViewPointSegment>[].obs;
+
+  final RxList<Subtitle> subtitles = RxList<Subtitle>();
+  final Map<int, SubtitleData> vttSubtitles = {};
+  late final vttSubtitlesIndex = (-1).obs;
+  Future<SubtitleData?> loadFileSubtitle({
+    required String path,
+    required String fileName,
+  }) async {
+    SubtitleData? data;
+    final length = subtitles.length;
+    if (SubtitleUtils.isJson(fileName)) {
+      final file = File(path);
+      final stream = file.openRead().transform(utf8.decoder);
+      final buffer = StringBuffer();
+      await for (final chunk in stream) {
+        if (isClosed) return null;
+        buffer.write(chunk);
+      }
+      if (isClosed) return null;
+      String sub = buffer.toString();
+      sub = await compute<List, String>(
+        SubtitleUtils.json2Vtt,
+        jsonDecode(sub)['body'],
+      );
+      if (isClosed) return null;
+      data = (isData: true, id: sub);
+      vttSubtitles[length] = data;
+    } else {
+      data = (isData: false, id: path);
+      vttSubtitles[length] = data;
+    }
+    return data;
+  }
 
   // 设定字幕轨道
   Future<void> setSubtitle(int index) async {
     if (index <= 0) {
+      plPlayerController.setSystemSubtitle(null);
       await plPlayerController.videoPlayerController?.setSubtitleTrack(.no());
       vttSubtitlesIndex.value = index;
       return;
     }
 
-    Future<void> setSub(({bool isData, String id}) subtitle) async {
-      final sub = subtitles[index - 1];
-
-      String subUri = subtitle.id;
-      if (subtitle.isData) {
-        subUri = 'memory://$subUri';
-      }
-      await plPlayerController.videoPlayerController?.setSubtitleTrack(
-        SubtitleTrack(subUri, sub.lanDoc, sub.lan, uri: true),
-      );
-      vttSubtitlesIndex.value = index;
-    }
-
     var subtitle = vttSubtitles[index - 1];
     if (subtitle == null) {
-      final result = await VideoHttp.getSubtitles(
-        subtitles[index - 1].subtitleUrl!,
-      );
-      if (!isClosed && result != null) {
-        subtitle = (isData: true, id: result);
-        vttSubtitles[index - 1] = subtitle;
+      final rawSub = subtitles[index - 1];
+      if (rawSub is LocalSubtitle) {
+        subtitle = await loadFileSubtitle(
+          path: rawSub.path,
+          fileName: PathUtils.subtitleExt,
+        );
       } else {
-        return;
+        final result = await VideoHttp.getSubtitles(
+          subtitles[index - 1].subtitleUrl!,
+        );
+        if (!isClosed && result != null) {
+          subtitle = (isData: true, id: result);
+          vttSubtitles[index - 1] = subtitle;
+        } else {
+          return;
+        }
       }
     }
-    await setSub(subtitle);
+    if (subtitle == null) return;
+    await _setSub(index, subtitle);
+  }
+
+  Future<void> _setSub(int index, SubtitleData subtitle) async {
+    final sub = subtitles[index - 1];
+
+    String subUri = subtitle.id;
+    if (subtitle.isData) {
+      subUri = 'memory://$subUri';
+    }
+    await plPlayerController.videoPlayerController?.setSubtitleTrack(
+      SubtitleTrack(subUri, sub.lanDoc, sub.lan, uri: true),
+    );
+    vttSubtitlesIndex.value = index;
+    if (SystemPlayer.isSupported) await _setSystemSub(subtitle);
+  }
+
+  /// The iOS system player shows subtitles in Flutter, so it needs the cues.
+  /// Kept up to date even while mpv plays, for a later switch of engine.
+  Future<void> _setSystemSub(SubtitleData subtitle) async {
+    try {
+      final content = subtitle.isData
+          ? subtitle.id
+          : await File(subtitle.id).readAsString();
+      final cues = await compute(
+        (String text) => SubtitleCueParser.parse(
+          text,
+          fileName: subtitle.isData ? null : subtitle.id,
+        ),
+        content,
+      );
+      if (!isClosed) plPlayerController.setSystemSubtitle(cues);
+    } catch (e) {
+      if (kDebugMode) debugPrint('system player subtitle: $e');
+      if (plPlayerController.usingSystemPlayer.value) {
+        SmartDialog.showToast('系统播放器无法读取该字幕');
+      }
+    }
   }
 
   // interactive video
@@ -1145,16 +1384,10 @@ class VideoDetailController extends GetxController
       if (plPlayerController.showViewPoints &&
           response.viewPoints?.firstOrNull?.type == 2) {
         try {
-          viewPointList.value = response.viewPoints!.map((item) {
-            final end = (item.to! / (data.timeLength! / 1000)).clamp(0.0, 1.0);
-            return ViewPointSegment(
-              end: end,
-              title: item.content,
-              url: item.imgUrl,
-              from: item.from,
-              to: item.to,
-            );
-          }).toList();
+          final duration = (data.timeLength! / 1000);
+          viewPointList.value = response.viewPoints!
+              .map((e) => e.toSegment(duration))
+              .toList();
         } catch (_) {}
       }
 
@@ -1163,24 +1396,9 @@ class VideoDetailController extends GetxController
       } else if (!Accounts.main.isLogin) {
         final res = await DmGrpc.dmView(aid, cid.value);
         if (res case Success(:final response)) {
-          if (response.hasSubtitle() &&
-              response.subtitle.subtitles.isNotEmpty) {
-            _setSubtitle(
-              response.subtitle.subtitles
-                  .map(
-                    (i) => Subtitle(
-                      lan: i.lan,
-                      lanDoc: i.lanDoc,
-                      subtitleUrl: i.subtitleUrl.replaceFirst(
-                        RegExp('^https?:'),
-                        '',
-                      ),
-                      isAi: i.type == .AI,
-                    ),
-                  )
-                  .toList()
-                ..sort(),
-            );
+          if (DmGrpc.dmViewToSubtitle(response) case final sub?
+              when (sub.isNotEmpty)) {
+            _setSubtitle(sub);
           }
         } else {
           res.toast();
@@ -1281,6 +1499,14 @@ class VideoDetailController extends GetxController
       resetBlock();
     }
 
+    // view point
+    if (plPlayerController.showViewPoints) {
+      viewPointList.clear();
+    }
+
+    // volume
+    volume = null;
+
     if (!isFileSource) {
       // language
       languages.value = null;
@@ -1289,11 +1515,6 @@ class VideoDetailController extends GetxController
       // dm trend
       if (plPlayerController.showDmChart) {
         dmTrend.value = null;
-      }
-
-      // view point
-      if (plPlayerController.showViewPoints) {
-        viewPointList.clear();
       }
 
       // interactive video
@@ -1384,7 +1605,7 @@ class VideoDetailController extends GetxController
     try {
       if (plPlayerController.enableBlock) {
         if (listData.lastOrNull case final SegmentModel item) {
-          onSkip(item, isSeek: false);
+          onSkip(item);
           onRemoveItem(listData.indexOf(item), item);
           return true;
         }
@@ -1467,13 +1688,12 @@ class VideoDetailController extends GetxController
           .followedBy(downloadService.waitDownloadQueue)
           .map((e) => e.cid)
           .toSet();
-      final index = episodes.indexWhere(
-        (e) => e.cid == (seasonCid ?? cid.value),
-      );
+      final targetCid = isUgc ? ugcIntroCtr.seasonCid ?? cid.value : cid.value;
+      final index = episodes.indexWhere((e) => e.cid == targetCid);
 
       showModalBottomSheet(
         context: context,
-        useSafeArea: true,
+        useSafeArea: IOSNativeTabBar.sheetUseSafeArea,
         isScrollControlled: true,
         constraints: BoxConstraints(
           maxWidth: min(640, context.mediaQueryShortestSide),

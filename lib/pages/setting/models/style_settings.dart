@@ -1,3 +1,6 @@
+import 'package:PiliPlus/common/widgets/rail_page_view.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
+
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -40,7 +43,6 @@ import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/ios/foldable_helper.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -110,14 +112,23 @@ List<SettingsModel> get styleSettings => [
           .put(SettingBoxKey.innerVideoDetailLayout, value.index)
           .whenComplete(setState),
     ),
+  if (IOSFoldableHelper.isIPhone)
+    NormalModel(
+      title: '竖栏内容边距',
+      leading: const Icon(Icons.space_bar_outlined),
+      getSubtitle: () => '当前：${Pref.railContentMargin.toInt()}pt，调整内容与右侧竖栏的距离',
+      onTap: _showRailContentMarginDialog,
+    ),
   SwitchModel(
     title: '改用侧边栏',
     subtitle: '开启后底栏与顶栏被替换，且相关设置失效',
-    leading: Icon(Icons.chrome_reader_mode_outlined),
+    leading: const Icon(Icons.chrome_reader_mode_outlined),
     setKey: SettingBoxKey.useSideBar,
     defaultVal: false,
-    disabledWhen: IOSNativeTabBar.rightRailDevice,
-    disabledSubtitle: '此机型使用系统右侧竖栏，已停用此选项',
+    // 系统标签栏接管导航时侧边栏出不来，开启只会让首页搜索栏消失
+    lockedOffReason: Get.find<MainController>().nativeTabBarTakesOver
+        ? '此设备由系统标签栏负责导航，不能改用侧边栏'
+        : null,
     needReboot: true,
   ),
   const SwitchModel(
@@ -147,6 +158,14 @@ List<SettingsModel> get styleSettings => [
     defaultVal: false,
     needReboot: true,
   ),
+  if (PlatformUtils.isDesktop)
+    const SwitchModel(
+      title: '首页显示刷新按钮',
+      leading: Icon(Icons.refresh),
+      setKey: SettingBoxKey.showRefreshFAB,
+      defaultVal: true,
+      needReboot: true,
+    ),
   NormalModel(
     title: '页面过渡动画',
     leading: const Icon(Icons.animation),
@@ -220,7 +239,7 @@ List<SettingsModel> get styleSettings => [
     subtitle: '关闭会显示为单列',
     leading: const Icon(Icons.view_array_outlined),
     setKey: SettingBoxKey.dynamicsWaterfallFlow,
-    defaultVal: Pref.horizontalScreen,
+    defaultVal: Pref.dynamicsWaterfallFlowDefault,
     needReboot: true,
   ),
   PopupModel(
@@ -325,10 +344,8 @@ List<SettingsModel> get styleSettings => [
     title: '图片质量',
     subtitle: '选择合适的图片清晰度，上限100%',
     leading: const Icon(Icons.image_outlined),
-    getTrailing: (theme) => Text(
-      '${Pref.picQuality}%',
-      style: theme.textTheme.titleSmall,
-    ),
+    getTrailing: (theme) =>
+        Text('${Pref.picQuality}%', style: theme.textTheme.titleSmall),
   ),
   NormalModel(
     onTap: (context, setState) => _showQualityDialog(
@@ -343,10 +360,8 @@ List<SettingsModel> get styleSettings => [
     title: '查看大图质量',
     subtitle: '选择合适的图片清晰度，上限100%',
     leading: const Icon(Icons.image_outlined),
-    getTrailing: (theme) => Text(
-      '${Pref.previewQ}%',
-      style: theme.textTheme.titleSmall,
-    ),
+    getTrailing: (theme) =>
+        Text('${Pref.previewQ}%', style: theme.textTheme.titleSmall),
   ),
   NormalModel(
     onTap: _showReduceColorDialog,
@@ -488,10 +503,7 @@ void _showQualityDialog({
   });
 }
 
-void _showUiScaleDialog(
-  BuildContext context,
-  VoidCallback setState,
-) {
+void _showUiScaleDialog(BuildContext context, VoidCallback setState) {
   const minUiScale = 0.5;
   const maxUiScale = 2.0;
 
@@ -813,10 +825,7 @@ Future<void> _showMsgUnReadDialog(
   }
 }
 
-void _showReduceColorDialog(
-  BuildContext context,
-  VoidCallback setState,
-) {
+void _showReduceColorDialog(BuildContext context, VoidCallback setState) {
   final reduceLuxColor = Pref.reduceLuxColor;
   showDialog(
     context: context,
@@ -941,9 +950,7 @@ Widget _themeTrailing(ThemeData theme) {
 
 // 设置已在回调前写入，按生效后的值（含折叠屏自动模式）刷新方向
 void _onHorizontalScreenChanged([bool? _]) {
-  if (IOSFoldableHelper.isIPhone) {
-    IOSFoldableHelper.applyOrientation();
-  } else if (Pref.horizontalScreen) {
+  if (Pref.horizontalScreen) {
     fullMode();
   } else {
     portraitUpMode();
@@ -988,4 +995,25 @@ Future<void> _showMemberTabDialog(
     await GStorage.setting.put(SettingBoxKey.memberTab, res.index);
     setState();
   }
+}
+
+Future<void> _showRailContentMarginDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final margin = await showDialog<double>(
+    context: context,
+    builder: (_) => SliderDialog(
+      value: Pref.railContentMargin,
+      title: const Text('竖栏内容边距'),
+      min: 0,
+      max: RailSpacing.maxClearance,
+      divisions: RailSpacing.maxClearance.toInt(),
+      suffix: 'pt',
+      precise: 0,
+    ),
+  );
+  if (margin == null) return;
+  await IOSNativeTabBar.setRailContentMargin(margin);
+  if (context.mounted) setState();
 }

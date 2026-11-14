@@ -95,10 +95,7 @@ class VideoCardHLater extends StatelessWidget {
 
   Widget content(BuildContext context, ThemeData theme) {
     final isPgc = videoItem.isPgc == true && videoItem.bangumi != null;
-    Widget stat = StatWidget(
-      type: StatType.play,
-      value: videoItem.stat?.view,
-    );
+    Widget stat = StatWidget(type: StatType.play, value: videoItem.stat?.view);
     return Expanded(
       child: Stack(
         clipBehavior: Clip.none,
@@ -201,11 +198,7 @@ Future<void> onPushLater(
   }
   try {
     final cid =
-        item.cid ??
-        await SearchHttp.ab2c(
-          aid: item.aid,
-          bvid: item.bvid,
-        );
+        item.cid ?? await SearchHttp.ab2c(aid: item.aid, bvid: item.bvid);
     if (cid != null) {
       if (onViewLater != null) {
         onViewLater(cid);

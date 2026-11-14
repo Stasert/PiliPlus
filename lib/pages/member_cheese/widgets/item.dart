@@ -11,11 +11,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberCheeseItem extends StatelessWidget {
-  const MemberCheeseItem({
-    super.key,
-    required this.item,
-    this.onRemove,
-  });
+  const MemberCheeseItem({super.key, required this.item, this.onRemove});
 
   final SpaceCheeseItem item;
   final VoidCallback? onRemove;
@@ -27,11 +23,7 @@ class MemberCheeseItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          item.title!,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        Text(item.title!, maxLines: 2, overflow: TextOverflow.ellipsis),
         if (item.status != null) ...[
           const SizedBox(height: 6),
           Text(
@@ -46,10 +38,7 @@ class MemberCheeseItem extends StatelessWidget {
           const Spacer(),
           Text(
             '收藏于${DateFormatUtils.dateFormat(int.parse(item.ctime!))}',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.outline,
-            ),
+            style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
           ),
         ],
       ],
@@ -103,11 +92,7 @@ class MemberCheeseItem extends StatelessWidget {
                         clipBehavior: Clip.none,
                         children: [
                           child,
-                          PBadge(
-                            right: 6,
-                            top: 6,
-                            text: item.marks!.join('|'),
-                          ),
+                          PBadge(right: 6, top: 6, text: item.marks!.join('|')),
                         ],
                       );
                     }

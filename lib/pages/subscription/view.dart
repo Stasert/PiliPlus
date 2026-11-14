@@ -34,9 +34,7 @@ class _SubPageState extends State<SubPage> with GridMixin {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             ViewSliverSafeArea(
-              sliver: Obx(
-                () => _buildBody(_subController.loadingState.value),
-              ),
+              sliver: Obx(() => _buildBody(_subController.loadingState.value)),
             ),
           ],
         ),

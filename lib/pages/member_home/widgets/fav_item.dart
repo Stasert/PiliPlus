@@ -15,10 +15,7 @@ class MemberFavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void onLongPress() => imageSaveDialog(
-      title: item.title,
-      cover: item.cover,
-    );
+    void onLongPress() => imageSaveDialog(title: item.title, cover: item.cover);
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -43,11 +40,7 @@ class MemberFavItem extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              NetworkImgLayer(
-                src: item.cover,
-                width: 160,
-                height: 100,
-              ),
+              NetworkImgLayer(src: item.cover, width: 160, height: 100),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(

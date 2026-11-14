@@ -79,11 +79,7 @@ class MemberArticleItem extends StatelessWidget {
                     ],
                     Text(
                       '${item.publishTimeText}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1,
-                        color: outline,
-                      ),
+                      style: TextStyle(fontSize: 12, height: 1, color: outline),
                     ),
                     const SizedBox(height: 3),
                     Row(

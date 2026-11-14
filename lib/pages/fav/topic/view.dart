@@ -67,10 +67,7 @@ class _FavTopicPageState extends State<FavTopicPage>
   ) {
     return switch (loadingState) {
       Loading() => const SliverToBoxAdapter(
-        child: SizedBox(
-          height: 125,
-          child: m3eLoading,
-        ),
+        child: SizedBox(height: 125, child: m3eLoading),
       ),
       Success(:final response) =>
         response != null && response.isNotEmpty
@@ -103,9 +100,7 @@ class _FavTopicPageState extends State<FavTopicPage>
                       onSecondaryTap: PlatformUtils.isMobile
                           ? null
                           : onLongPress,
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(6),
-                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(6)),
                       child: Container(
                         alignment: Alignment.centerLeft,
                         padding: const EdgeInsets.symmetric(

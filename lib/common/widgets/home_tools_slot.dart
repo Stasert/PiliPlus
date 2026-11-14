@@ -32,11 +32,7 @@ class HomeToolsAvailability extends ValueNotifier<bool> {
 /// Rebuild even when the kept-alive HomePage itself is a constant widget.
 /// A native request alone must never remove the fallback search entry.
 class HomeTopTools extends StatelessWidget {
-  const HomeTopTools({
-    super.key,
-    required this.placement,
-    required this.child,
-  });
+  const HomeTopTools({super.key, required this.placement, required this.child});
 
   final ValueListenable<HomeToolsPlacement> placement;
   final Widget child;

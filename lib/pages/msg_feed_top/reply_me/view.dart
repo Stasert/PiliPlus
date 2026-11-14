@@ -207,10 +207,7 @@ class _ReplyMePageState extends State<ReplyMePage> {
         }
         return HttpError(onReload: _replyMeController.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _replyMeController.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _replyMeController.onReload);
     }
   }
 }

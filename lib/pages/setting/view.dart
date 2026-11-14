@@ -25,11 +25,7 @@ class _SettingsModel {
   final String? subtitle;
   final Icon icon;
 
-  const _SettingsModel({
-    required this.type,
-    this.subtitle,
-    required this.icon,
-  });
+  const _SettingsModel({required this.type, this.subtitle, required this.icon});
 }
 
 class SettingPage extends StatefulWidget {
@@ -95,10 +91,7 @@ class _SettingPageState extends State<SettingPage> {
       type: .webdavSetting,
       icon: Icon(MdiIcons.databaseCogOutline),
     ),
-    _SettingsModel(
-      type: .about,
-      icon: Icon(Icons.info_outline),
-    ),
+    _SettingsModel(type: .about, icon: Icon(Icons.info_outline)),
   ];
 
   @override
@@ -122,10 +115,7 @@ class _SettingPageState extends State<SettingPage> {
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 4,
-                    child: _buildList(theme),
-                  ),
+                  Expanded(flex: 4, child: _buildList(theme)),
                   VerticalDivider(
                     width: 1,
                     color: theme.colorScheme.outline.withValues(alpha: 0.1),
@@ -243,9 +233,7 @@ class _SettingPageState extends State<SettingPage> {
       builder: (context) => MultiSelectDialog<LoginAccount>(
         title: '选择要登出的账号uid',
         initValues: const Iterable.empty(),
-        values: {
-          for (final i in Accounts.account.values) i: i.mid.toString(),
-        },
+        values: {for (final i in Accounts.account.values) i: i.mid.toString()},
       ),
     );
     if (!context.mounted || result == null || result.isEmpty) return;
@@ -304,11 +292,7 @@ class _SettingPageState extends State<SettingPage> {
   }
 
   Widget _buildSearchItem(ThemeData theme) => Padding(
-    padding: const EdgeInsets.only(
-      left: 16,
-      right: 16,
-      bottom: 8,
-    ),
+    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
     child: Material(
       color: theme.colorScheme.onInverseSurface,
       borderRadius: const BorderRadius.all(Radius.circular(50)),
@@ -321,11 +305,7 @@ class _SettingPageState extends State<SettingPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  size: 18,
-                  applyTextScaling: true,
-                  Icons.search,
-                ),
+                Icon(size: 18, applyTextScaling: true, Icons.search),
                 Text(
                   ' 搜索',
                   style: TextStyle(height: 1),

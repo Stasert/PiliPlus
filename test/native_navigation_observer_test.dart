@@ -29,7 +29,8 @@ void main() {
       builder: (_) => const AlertDialog(title: Text('modal')),
     );
     await tester.pumpAndSettle();
-    expect(observer.canGoBack, true);
+    // v3 keeps popup routes out of the rail's page state. Explicit Home still closes them.
+    expect(observer.canGoBack, false);
     expect(await observer.returnToRoot(), true);
     await tester.pumpAndSettle();
     expect(observer.canGoBack, false);

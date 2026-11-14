@@ -45,10 +45,7 @@ class MultiSelectAppBarWidget extends StatelessWidget
               if (ctr.checkedCount == 0) return;
               ctr.onRemove();
             },
-            child: Text(
-              '移除',
-              style: TextStyle(color: colorScheme.error),
-            ),
+            child: Text('移除', style: TextStyle(color: colorScheme.error)),
           ),
           const SizedBox(width: 6),
         ],

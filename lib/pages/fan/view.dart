@@ -12,11 +12,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class FansPage extends StatefulWidget {
-  const FansPage({
-    super.key,
-    this.showName = true,
-    this.onSelect,
-  });
+  const FansPage({super.key, this.showName = true, this.onSelect});
 
   final bool showName;
   final ValueChanged<UserModel>? onSelect;
@@ -28,13 +24,7 @@ class FansPage extends StatefulWidget {
     if (mid == null) {
       return;
     }
-    Get.toNamed(
-      '/fan',
-      arguments: {
-        'mid': safeToInt(mid),
-        'name': name,
-      },
-    );
+    Get.toNamed('/fan', arguments: {'mid': safeToInt(mid), 'name': name});
   }
 }
 

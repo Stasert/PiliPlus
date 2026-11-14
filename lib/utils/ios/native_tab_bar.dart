@@ -1,13 +1,15 @@
-import 'dart:async' show scheduleMicrotask;
+import 'dart:async' show scheduleMicrotask, StreamSubscription;
+
+import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 
 import 'package:PiliPlus/utils/ios/native_navigation_batch.dart';
+import 'package:PiliPlus/utils/ios/foldable_helper.dart';
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
 import 'package:PiliPlus/utils/ios/native_page_actions.dart';
 import 'package:PiliPlus/utils/ios/native_comment_actions.dart';
 import 'package:PiliPlus/common/widgets/home_tools_slot.dart';
-import 'package:PiliPlus/utils/ios/fold_orientation_sync.dart';
-import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart'
-    show invalidatePreferredOrientationCache;
 
 import 'dart:io' show Platform;
 import 'dart:math' show max;
@@ -20,6 +22,14 @@ import 'package:flutter/widgets.dart';
 /// 原生层不可用时（系统版本过低、非 iPhone）[attach] 返回 false，
 /// 继续由 Flutter 绘制导航。
 abstract final class IOSNativeTabBar {
+  static bool get isAvailable =>
+      Platform.isIOS &&
+      IOSFoldableHelper.isIPhone &&
+      IOSFoldableHelper.systemMajorVersion >= 26;
+
+  static bool hidesPageBackButton(BuildContext context) =>
+      NativeBackScope.isVisible(context) && ModalRoute.of(context) is PageRoute;
+
   static const _channel = MethodChannel('piliplus/native_tab_bar');
 
   static bool _enabled = false;
@@ -32,46 +42,33 @@ abstract final class IOSNativeTabBar {
   static bool _selectingTab = false;
   static Future<void> Function()? onBack;
   static final backButtonVisible = ValueNotifier(false);
+  static ValueNotifier<bool> get backAvailable => backButtonVisible;
+  static bool _isVideoRoute = false;
+  static bool get sheetUseSafeArea => !_isVideoRoute && !playerFullScreen.value;
   static final pageActionsVisible = ValueNotifier(false);
   static final videoNavigationEnabled = ValueNotifier(false);
   static final playerFullScreen = ValueNotifier(false);
-  static bool managedFullscreenDirection = false;
-  static final _orientationRequests = FoldOrientationRequests(
-    validate: (id) async =>
-        await _channel.invokeMethod<bool>(
-          'isPlayerOrientationRequestCurrent',
-          id,
-        ) ??
-        false,
-    apply: (orientations) {
-      invalidatePreferredOrientationCache();
-      return SystemChrome.setPreferredOrientations(orientations);
-    },
-    complete: (id, success) => _channel.invokeMethod<void>(
-      'completePlayerOrientationRequest',
-      {'id': id, 'success': success},
-    ),
-  );
-
-  static Future<bool> beginPlayerOrientation({required bool vertical}) async {
-    if (!Platform.isIOS) return false;
-    try {
-      return managedFullscreenDirection =
-          await _channel.invokeMethod<bool>(
-            'beginPlayerOrientation',
-            vertical,
-          ) ??
-          false;
-    } on MissingPluginException {
-      return false;
+  static bool _modalOverlayVisible = false;
+  static void setModalOverlayVisible(bool visible) {
+    _modalOverlayVisible = visible;
+    _comments.refresh();
+    if (Platform.isIOS) {
+      _navigationBatch.submit('presentation', {'modal': visible});
     }
   }
-
-  static ValueChanged<bool>? onFoldOrientationChanged;
 
   /// Sticky for this device session, so folding/temporary bar hiding cannot
   /// re-enable the incompatible Flutter sidebar preference.
   static final rightRailDevice = ValueNotifier(false);
+  static final railContentMargin = ValueNotifier<double>(RailSpacing.clearance);
+  static StreamSubscription<Object?>? _railMarginSubscription;
+
+  static Future<void> setRailContentMargin(double value) async {
+    final margin = RailSpacing.normalizeClearance(value);
+    await GStorage.setting.put(SettingBoxKey.railContentMargin, margin);
+    railContentMargin.value = margin;
+  }
+
   static final homeToolsVisible = ValueNotifier(false);
 
   /// The first native acknowledgement fixes the home layout for this session.
@@ -81,7 +78,10 @@ abstract final class IOSNativeTabBar {
   static final commentButtonsAvailable = ValueNotifier(false);
   static final _comments = NativeCommentActions(
     canPresent: () =>
-        _enabled && rightRailDevice.value && !playerFullScreen.value,
+        _enabled &&
+        rightRailDevice.value &&
+        !playerFullScreen.value &&
+        !_modalOverlayVisible,
     onChanged: (state) => _sendNavigationState('setCommentAction', state),
   );
   static bool _commentFrameScheduled = false;
@@ -119,33 +119,6 @@ abstract final class IOSNativeTabBar {
     });
   }
 
-  /// Let the hinge observer prepare scene geometry before the display moves.
-  /// False means this device/runtime has no native hinge policy; Dart falls back.
-  static Future<bool> applyFoldableOrientation(bool automatic) async {
-    if (!Platform.isIOS) return false;
-    try {
-      return await _channel.invokeMethod<bool>(
-            'applyFoldableOrientation',
-            automatic,
-          ) ??
-          false;
-    } on MissingPluginException {
-      return false;
-    }
-  }
-
-  static Future<List<Object?>> foldOrientationDiagnostics() async {
-    if (!Platform.isIOS) return const [];
-    try {
-      return await _channel.invokeListMethod<Object?>(
-            'getFoldOrientationDiagnostics',
-          ) ??
-          const [];
-    } on MissingPluginException {
-      return const [];
-    }
-  }
-
   static final _pageActions = NativePageActionRegistry(
     onChanged: (state) => _sendNavigationState('setPageActions', state),
   );
@@ -153,6 +126,9 @@ abstract final class IOSNativeTabBar {
   static void setTopRoute(Route<dynamic>? route) {
     _comments.setTopPage(route);
     final path = Uri.tryParse(route?.settings.name ?? '')?.path;
+    _isVideoRoute =
+        route is PageRoute && {'/videoV', '/VideoDetailPageV'}.contains(path);
+    if (!_isVideoRoute && playerFullScreen.value) setFullScreen(false);
     _pageActions.setTopPage(
       route,
       initialVideo:
@@ -232,7 +208,6 @@ abstract final class IOSNativeTabBar {
   }
 
   static void setFullScreen(bool value) {
-    if (!value) managedFullscreenDirection = false;
     playerFullScreen.value = value;
     _comments.refresh();
     _sendNavigationState('setFullScreen', value);
@@ -244,6 +219,12 @@ abstract final class IOSNativeTabBar {
 
   static Future<void> init() async {
     if (!Platform.isIOS) return;
+    railContentMargin.value = Pref.railContentMargin;
+    _railMarginSubscription ??= GStorage.setting
+        .watch(key: SettingBoxKey.railContentMargin)
+        .listen((_) {
+          railContentMargin.value = Pref.railContentMargin;
+        });
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'pageAction':
@@ -263,13 +244,6 @@ abstract final class IOSNativeTabBar {
           videoNavigationEnabled.value = call.arguments as bool;
         case 'pageActionsVisible':
           pageActionsVisible.value = call.arguments as bool;
-        case 'foldOrientationChanged':
-          invalidatePreferredOrientationCache();
-          onFoldOrientationChanged?.call(call.arguments == true);
-        case 'playerOrientationRequest':
-          await _orientationRequests.handle(
-            Map<Object?, Object?>.from(call.arguments as Map),
-          );
         case 'homeToolsVisible':
           homeToolsVisible.value = call.arguments as bool;
           homeToolsAvailable.acknowledgeVisibility(call.arguments as bool);
@@ -375,65 +349,71 @@ class NativeSafeArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NativeBackScope(
-      child: NativePageActionsScope(
-        child: NativeVideoNavigationScope(
-          child: ValueListenableBuilder<EdgeInsets?>(
-            valueListenable: IOSNativeTabBar.safeArea,
-            builder: (context, insets, child) {
-              if (insets == null) return child!;
-              return ValueListenableBuilder<bool>(
-                valueListenable: IOSNativeTabBar.playerFullScreen,
-                builder: (context, fullscreen, child) {
-                  return ValueListenableBuilder<bool>(
-                    valueListenable: IOSNativeTabBar.rightRailDevice,
-                    builder: (context, rail, child) {
-                      final mediaQuery = MediaQuery.of(context);
-                      var nativeInsets = insets;
-                      final verticalRail = rail && insets.right >= 72;
-                      if (rail) {
-                        // Reserve the rail plus a single, fixed 4pt clearance.
-                        // Page gutters never add another trailing inset.
-                        final right = RailSpacing.rightInset(
-                          insets.right,
-                          fullScreen: fullscreen,
-                        );
-                        nativeInsets = insets.copyWith(
-                          right: right,
-                          top: fullscreen
-                              ? 0
-                              : (verticalRail ? 12 : insets.top),
-                        );
-                      }
-                      final viewPadding = nativeInsets / scale;
-                      return MediaQuery(
-                        data: mediaQuery.copyWith(
-                          viewPadding: viewPadding,
-                          padding: viewPadding.copyWith(
-                            bottom: max(
-                              0,
-                              viewPadding.bottom - mediaQuery.viewInsets.bottom,
+    return ValueListenableBuilder<double>(
+      valueListenable: IOSNativeTabBar.railContentMargin,
+      builder: (context, contentMargin, child) => NativeBackScope(
+        child: NativePageActionsScope(
+          child: NativeVideoNavigationScope(
+            child: ValueListenableBuilder<EdgeInsets?>(
+              valueListenable: IOSNativeTabBar.safeArea,
+              builder: (context, insets, child) {
+                if (insets == null) return child!;
+                return ValueListenableBuilder<bool>(
+                  valueListenable: IOSNativeTabBar.playerFullScreen,
+                  builder: (context, fullscreen, child) {
+                    return ValueListenableBuilder<bool>(
+                      valueListenable: IOSNativeTabBar.rightRailDevice,
+                      builder: (context, rail, child) {
+                        final mediaQuery = MediaQuery.of(context);
+                        var nativeInsets = insets;
+                        final verticalRail = rail && insets.right >= 72;
+                        if (rail) {
+                          // Reserve the rail plus a single, configurable native-point margin.
+                          // Page gutters never add another trailing inset.
+                          final right = RailSpacing.rightInset(
+                            insets.right,
+                            fullScreen: fullscreen,
+                            contentMargin: contentMargin,
+                          );
+                          nativeInsets = insets.copyWith(
+                            right: right,
+                            top: fullscreen
+                                ? 0
+                                : (verticalRail ? 12 : insets.top),
+                          );
+                        }
+                        final viewPadding = nativeInsets / scale;
+                        return MediaQuery(
+                          data: mediaQuery.copyWith(
+                            viewPadding: viewPadding,
+                            padding: viewPadding.copyWith(
+                              bottom: max(
+                                0,
+                                viewPadding.bottom -
+                                    mediaQuery.viewInsets.bottom,
+                              ),
                             ),
                           ),
-                        ),
-                        child: RailViewportScope(
-                          insets: rail ? viewPadding : EdgeInsets.zero,
-                          windowWidth: mediaQuery.size.width,
-                          normalizedTop: verticalRail,
-                          child: child!,
-                        ),
-                      );
-                    },
-                    child: child,
-                  );
-                },
-                child: child,
-              );
-            },
-            child: child,
+                          child: RailViewportScope(
+                            insets: rail ? viewPadding : EdgeInsets.zero,
+                            windowWidth: mediaQuery.size.width,
+                            normalizedTop: verticalRail,
+                            child: child!,
+                          ),
+                        );
+                      },
+                      child: child,
+                    );
+                  },
+                  child: child,
+                );
+              },
+              child: child,
+            ),
           ),
         ),
       ),
+      child: child,
     );
   }
 }

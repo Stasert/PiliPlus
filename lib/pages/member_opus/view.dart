@@ -47,10 +47,7 @@ class _MemberOpusState extends State<MemberOpus>
   void initState() {
     super.initState();
     _controller = Get.put(
-      MemberOpusController(
-        mid: widget.mid,
-        heroTag: widget.heroTag,
-      ),
+      MemberOpusController(mid: widget.mid, heroTag: widget.heroTag),
       tag: widget.heroTag,
     );
   }
@@ -99,9 +96,7 @@ class _MemberOpusState extends State<MemberOpus>
                     context: context,
                     builder: (context) => SimpleDialog(
                       clipBehavior: Clip.hardEdge,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       children: _controller.filter!
                           .map(
                             (e) => ListTile(
@@ -128,12 +123,10 @@ class _MemberOpusState extends State<MemberOpus>
                     ),
                   ),
                   icon: const Icon(size: 20, Icons.sort),
-                  label: Obx(
-                    () {
-                      final type = _controller.type.value;
-                      return Text(type.text ?? type.tabName!);
-                    },
-                  ),
+                  label: Obx(() {
+                    final type = _controller.type.value;
+                    return Text(type.text ?? type.tabName!);
+                  }),
                 ),
               ),
             )
@@ -163,15 +156,12 @@ class _MemberOpusState extends State<MemberOpus>
             mainAxisSpacing: Style.safeSpace,
             crossAxisSpacing: Style.safeSpace,
             gridDelegate: gridDelegate,
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == response.length - 1) {
-                  _controller.onLoadMore();
-                }
-                return SpaceOpusItemGrpc(item: response[index]);
-              },
-              childCount: response.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              if (index == response.length - 1) {
+                _controller.onLoadMore();
+              }
+              return SpaceOpusItemGrpc(item: response[index]);
+            }, childCount: response.length),
           );
           if (_controller.collection case final collection?
               when collection.allCollections.isNotEmpty) {
@@ -187,7 +177,10 @@ class _MemberOpusState extends State<MemberOpus>
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: CollectionSection(collection: collection),
+                  child: CollectionSection(
+                    collection: collection,
+                    onCollapse: _controller.onCollapseCollection,
+                  ),
                 ),
                 child,
               ],
@@ -197,10 +190,7 @@ class _MemberOpusState extends State<MemberOpus>
         }
         return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 

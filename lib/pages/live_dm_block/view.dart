@@ -4,7 +4,7 @@ import 'package:PiliPlus/common/widgets/keep_alive_wrapper.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
-import 'package:PiliPlus/models_new/live/live_dm_block/shield_user_list.dart';
+import 'package:PiliPlus/models_new/live/live_info_by_user/shield_user_list.dart';
 import 'package:PiliPlus/pages/live_dm_block/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -93,18 +93,16 @@ class _LiveDmBlockPageState extends State<LiveDmBlockPage> {
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
-        children: list.mapIndexed(
-          (i, e) {
-            return SearchText(
-              text: e is ShieldUserList ? e.uname : e as String,
-              onTap: (value) => showConfirmDialog(
-                context: context,
-                title: const Text('确定删除该规则？'),
-                onConfirm: () => _controller.onRemove(i, e),
-              ),
-            );
-          },
-        ).toList(),
+        children: list.mapIndexed((i, e) {
+          return SearchText(
+            text: e is ShieldUserList ? e.uname : e as String,
+            onTap: (value) => showConfirmDialog(
+              context: context,
+              title: const Text('确定删除该规则？'),
+              onConfirm: () => _controller.onRemove(i, e),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

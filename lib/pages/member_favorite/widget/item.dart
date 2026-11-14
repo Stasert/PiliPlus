@@ -21,10 +21,7 @@ class MemberFavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    void onLongPress() => imageSaveDialog(
-      title: item.title,
-      cover: item.cover,
-    );
+    void onLongPress() => imageSaveDialog(title: item.title, cover: item.cover);
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -44,10 +41,7 @@ class MemberFavItem extends StatelessWidget {
             );
             onDelete?.call(isDeleted);
           } else {
-            SubDetailPage.toSubDetailPage(
-              item.id!,
-              subInfo: item,
-            );
+            SubDetailPage.toSubDetailPage(item.id!, subInfo: item);
           }
         },
         onLongPress: onLongPress,
@@ -76,17 +70,9 @@ class MemberFavItem extends StatelessWidget {
                     ),
                   ),
                   if (item.type == 21)
-                    const PBadge(
-                      right: 6,
-                      top: 6,
-                      text: '合集',
-                    )
+                    const PBadge(right: 6, top: 6, text: '合集')
                   else if (item.type == 11)
-                    const PBadge(
-                      right: 6,
-                      top: 6,
-                      text: '收藏夹',
-                    ),
+                    const PBadge(right: 6, top: 6, text: '收藏夹'),
                 ],
               ),
               const SizedBox(width: 10),

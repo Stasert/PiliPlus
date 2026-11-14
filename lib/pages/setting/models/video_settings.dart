@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/models/common/video/base_quality.dart';
 import 'package:PiliPlus/models/common/video/cdn_type.dart';
 import 'package:PiliPlus/models/common/video/video_decode_type.dart';
@@ -20,6 +21,47 @@ import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
+Future<bool> _confirmSystemPlayerHdr(BuildContext context, bool value) async {
+  if (value) return true;
+  return showConfirmDialog(
+    context: context,
+    title: const Text('HDR/杜比视界视频改用内置播放器？'),
+    content: const Text(
+      '内置播放器在 iOS 上只能输出普通（SDR）画面，'
+      'HDR 和杜比视界视频会出现过曝、偏色或发灰，与官方客户端不一致。\n\n'
+      '建议只在系统播放器播放异常时关闭。',
+    ),
+  );
+}
+
+/// Turning「所有视频」on also turns the HDR toggle back on, so it is on again
+/// (its default) once「所有视频」is turned off.
+void _onSystemPlayerAllChanged(bool value) {
+  if (value) GStorage.setting.put(SettingBoxKey.systemPlayerHdr, true);
+}
+
+Future<bool> _confirmSystemPlayerAll(BuildContext context, bool value) async {
+  if (!value) return true;
+  return showConfirmDialog(
+    context: context,
+    title: const Text('所有视频都使用系统播放器？'),
+    content: const SingleChildScrollView(
+      child: Text(
+        '这是实验性功能。\n\n'
+        '影响范围\n'
+        '· 所有点播视频（普通视频、番剧、课程等）改用 iOS 系统播放器播放\n'
+        '· 直播和「听视频」仍使用内置播放器\n'
+        '· 设备不支持 AV1 硬解时的 AV1 视频，以及部分已缓存的普通 HEVC 视频，仍使用内置播放器\n\n'
+        '可能的后果\n'
+        '· 超分辨率不可用\n'
+        '· 「硬解模式」「缓冲大小」「缓冲时长」「视频同步」等内置播放器设置对这些视频不生效\n'
+        '· 系统播放器出错、加载超时或没有画面时，会自动切回内置播放器继续播放\n\n'
+        '改动在下次打开视频时生效。',
+      ),
+    ),
+  );
+}
+
 List<SettingsModel> get videoSettings => [
   const SwitchModel(
     title: '开启硬解',
@@ -28,6 +70,26 @@ List<SettingsModel> get videoSettings => [
     setKey: SettingBoxKey.enableHA,
     defaultVal: true,
   ),
+  if (Platform.isIOS) ...[
+    const SwitchModel(
+      title: 'HDR/杜比视界视频采用系统播放器',
+      subtitle: '交给 iOS 系统播放器硬解播放，画面与官方客户端一致',
+      leading: Icon(Icons.hdr_on_outlined),
+      setKey: SettingBoxKey.systemPlayerHdr,
+      defaultVal: true,
+      confirmChange: _confirmSystemPlayerHdr,
+      // Covered by「所有视频」while that one is on.
+      lockedOnBy: SettingBoxKey.systemPlayerAll,
+    ),
+    const SwitchModel(
+      title: '所有视频均采用系统播放器',
+      subtitle: '实验性功能',
+      leading: Icon(Icons.smart_display_outlined),
+      setKey: SettingBoxKey.systemPlayerAll,
+      confirmChange: _confirmSystemPlayerAll,
+      onChanged: _onSystemPlayerAllChanged,
+    ),
+  ],
   const SwitchModel(
     title: '免登录1080P',
     subtitle: '免登录查看1080P视频',

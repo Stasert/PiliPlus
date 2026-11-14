@@ -178,9 +178,7 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
-  Widget _buildHotSearch({
-    bool isTrending = true,
-  }) {
+  Widget _buildHotSearch({bool isTrending = true}) {
     final text = Text(
       isTrending ? '大家都在搜' : '搜索发现',
       strutStyle: const StrutStyle(leading: 0, height: 1),
@@ -191,11 +189,7 @@ class _SearchPageState extends State<SearchPage> {
     );
     final outline = theme.colorScheme.outline;
     final secondary = theme.colorScheme.secondary;
-    final style = TextStyle(
-      height: 1,
-      fontSize: 13,
-      color: outline,
-    );
+    final style = TextStyle(height: 1, fontSize: 13, color: outline);
     return SliverPadding(
       padding: .fromLTRB(
         10,
@@ -290,122 +284,115 @@ class _SearchPageState extends State<SearchPage> {
 
   late final mainAxisExtent = 16 + MediaQuery.textScalerOf(context).scale(14);
   Widget get _buildHistory {
-    return Obx(
-      () {
-        final list = _searchController.historyList;
-        if (list.isEmpty) {
-          return const SliverToBoxAdapter();
-        }
-        final secondary = theme.colorScheme.secondary;
-        return SliverPadding(
-          padding: .fromLTRB(
-            10,
-            !isPortrait
-                ? 25
-                : _searchController.enableTrending
-                ? 0
-                : 6,
-            6,
-            25,
-          ),
-          sliver: SliverMainAxisGroup(
-            slivers: [
-              SliverPadding(
-                padding: const .fromLTRB(6, 0, 6, 6),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    children: [
-                      Text(
-                        '搜索历史',
-                        strutStyle: const StrutStyle(leading: 0, height: 1),
-                        style: theme.textTheme.titleMedium!.copyWith(
-                          height: 1,
-                          fontWeight: .bold,
+    return Obx(() {
+      final list = _searchController.historyList;
+      if (list.isEmpty) {
+        return const SliverToBoxAdapter();
+      }
+      final secondary = theme.colorScheme.secondary;
+      return SliverPadding(
+        padding: .fromLTRB(
+          10,
+          !isPortrait
+              ? 25
+              : _searchController.enableTrending
+              ? 0
+              : 6,
+          6,
+          25,
+        ),
+        sliver: SliverMainAxisGroup(
+          slivers: [
+            SliverPadding(
+              padding: const .fromLTRB(6, 0, 6, 6),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  children: [
+                    Text(
+                      '搜索历史',
+                      strutStyle: const StrutStyle(leading: 0, height: 1),
+                      style: theme.textTheme.titleMedium!.copyWith(
+                        height: 1,
+                        fontWeight: .bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _recordBtn,
+                    _exportBtn,
+                    const Spacer(),
+                    TextButton.icon(
+                      style: const ButtonStyle(
+                        visualDensity: .compact,
+                        tapTargetSize: .shrinkWrap,
+                        padding: WidgetStatePropertyAll(
+                          .symmetric(horizontal: 10),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      _recordBtn,
-                      _exportBtn,
-                      const Spacer(),
-                      TextButton.icon(
-                        style: const ButtonStyle(
-                          visualDensity: .compact,
-                          tapTargetSize: .shrinkWrap,
-                          padding: WidgetStatePropertyAll(
-                            .symmetric(horizontal: 10),
-                          ),
-                        ),
-                        onPressed: _searchController.onClearHistory,
-                        icon: Icon(
-                          Icons.clear_all_outlined,
-                          size: 18,
-                          color: secondary,
-                        ),
-                        label: Text(
-                          '清空',
-                          style: TextStyle(height: 1, color: secondary),
-                        ),
+                      onPressed: _searchController.onClearHistory,
+                      icon: Icon(
+                        Icons.clear_all_outlined,
+                        size: 18,
+                        color: secondary,
                       ),
-                    ],
-                  ),
+                      label: Text(
+                        '清空',
+                        style: TextStyle(height: 1, color: secondary),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SliverFixedWrap(
-                mainAxisExtent: mainAxisExtent,
-                spacing: 8,
-                runSpacing: 8,
-                delegate: SliverChildBuilderDelegate(
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: false,
-                  childCount: list.length,
-                  (context, index) => SearchText(
-                    text: list[index],
-                    onTap: _searchController.onClickKeyword,
-                    onLongPress: _searchController.onLongSelect,
-                    height: 1,
-                    maxLines: 1,
-                    fontSize: 14,
-                    overflow: .ellipsis,
-                    padding: const .fromLTRB(11, 8, 11, 0),
-                  ),
+            ),
+            SliverFixedWrap(
+              mainAxisExtent: mainAxisExtent,
+              spacing: 8,
+              runSpacing: 8,
+              delegate: SliverChildBuilderDelegate(
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
+                childCount: list.length,
+                (context, index) => SearchText(
+                  text: list[index],
+                  onTap: _searchController.onClickKeyword,
+                  onLongPress: _searchController.onLongSelect,
+                  height: 1,
+                  maxLines: 1,
+                  fontSize: 14,
+                  overflow: .ellipsis,
+                  padding: const .fromLTRB(11, 8, 11, 0),
                 ),
               ),
-            ],
-          ),
-        );
-      },
-    );
+            ),
+          ],
+        ),
+      );
+    });
   }
 
-  Widget get _recordBtn => Obx(
-    () {
-      bool enable = _searchController.recordSearchHistory.value;
-      return IconButton(
-        iconSize: 22,
-        tooltip: enable ? '记录搜索' : '无痕搜索',
-        icon: DisabledIcon(
-          disable: !enable,
-          child: Icon(
-            Icons.history,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-          ),
+  Widget get _recordBtn => Obx(() {
+    bool enable = _searchController.recordSearchHistory.value;
+    return IconButton(
+      iconSize: 22,
+      tooltip: enable ? '记录搜索' : '无痕搜索',
+      icon: DisabledIcon(
+        disable: !enable,
+        child: Icon(
+          Icons.history,
+          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
         ),
-        style: const ButtonStyle(
-          visualDensity: .comfortable,
-          tapTargetSize: .shrinkWrap,
-          padding: WidgetStatePropertyAll(.zero),
-        ),
-        onPressed: () {
-          enable = !enable;
-          _searchController.recordSearchHistory.value = enable;
-          GStorage.setting.put(
-            SettingBoxKey.recordSearchHistory,
-            enable,
-          );
-        },
-      );
-    },
-  );
+      ),
+      style: const ButtonStyle(
+        visualDensity: .comfortable,
+        tapTargetSize: .shrinkWrap,
+        padding: WidgetStatePropertyAll(.zero),
+      ),
+      onPressed: () {
+        enable = !enable;
+        _searchController.recordSearchHistory.value = enable;
+        GStorage.setting.put(SettingBoxKey.recordSearchHistory, enable);
+      },
+    );
+  });
 
   Widget get _exportBtn => IconButton(
     iconSize: 22,

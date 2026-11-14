@@ -108,9 +108,7 @@ class _SearchUserPanelState
         if (index == list.length - 1) {
           controller.onLoadMore();
         }
-        return SearchUserItem(
-          item: list[index],
-        );
+        return SearchUserItem(item: list[index]);
       },
       itemCount: list.length,
     );

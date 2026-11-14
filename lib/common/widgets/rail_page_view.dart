@@ -198,14 +198,26 @@ class RailPageView extends StatelessWidget {
 }
 
 /// Native rail space is reserved once by NativeSafeArea. Page gutters must not
-/// add another gap on top of the fixed four native points.
+/// add another gap on top of the user-selected native-point margin.
 abstract final class RailSpacing {
   static const footprint = 72.0;
   static const clearance = 4.0;
-  static double rightInset(double systemInset, {required bool fullScreen}) =>
-      fullScreen
+  static const maxClearance = 32.0;
+
+  static double normalizeClearance(Object? value) =>
+      value is num && value.isFinite
+      ? value.toDouble().clamp(0.0, maxClearance).roundToDouble()
+      : clearance;
+
+  static double rightInset(
+    double systemInset, {
+    required bool fullScreen,
+    double contentMargin = clearance,
+  }) => fullScreen
       ? 0
-      : (systemInset >= footprint ? footprint + clearance : systemInset);
+      : (systemInset >= footprint
+            ? footprint + normalizeClearance(contentMargin)
+            : systemInset);
 }
 
 double railTrailingSpace(BuildContext context, double normal) =>

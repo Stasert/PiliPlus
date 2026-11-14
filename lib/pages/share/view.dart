@@ -41,11 +41,7 @@ class UserModel {
 }
 
 class SharePanel extends StatefulWidget {
-  const SharePanel({
-    super.key,
-    required this.content,
-    this.userList,
-  });
+  const SharePanel({super.key, required this.content, this.userList});
 
   final Map content;
   final List<UserModel>? userList;
@@ -150,9 +146,7 @@ class _SharePanelState extends State<SharePanel> {
                                       height: 50,
                                       decoration: BoxDecoration(
                                         color: theme.colorScheme.primary
-                                            .withValues(
-                                              alpha: 0.3,
-                                            ),
+                                            .withValues(alpha: 0.3),
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           width: 1.5,

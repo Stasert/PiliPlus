@@ -30,13 +30,7 @@ class FollowPage extends StatefulWidget {
 
   static void toFollowPage({dynamic mid, String? name}) {
     if (mid == null) return;
-    Get.toNamed(
-      '/follow',
-      arguments: {
-        'mid': safeToInt(mid),
-        'name': name,
-      },
-    );
+    Get.toNamed('/follow', arguments: {'mid': safeToInt(mid), 'name': name});
   }
 }
 
@@ -122,9 +116,7 @@ class _FollowPageState extends State<FollowPage>
             IconButton(
               onPressed: () => Get.toNamed(
                 '/followSearch',
-                arguments: {
-                  'mid': _followController.mid,
-                },
+                arguments: {'mid': _followController.mid},
               ),
               icon: const Icon(Icons.search_outlined),
               tooltip: '搜索',
@@ -137,10 +129,7 @@ class _FollowPageState extends State<FollowPage>
                   child: const Row(
                     spacing: 10,
                     mainAxisSize: .min,
-                    children: [
-                      Icon(Icons.block, size: 19),
-                      Text('黑名单管理'),
-                    ],
+                    children: [Icon(Icons.block, size: 19), Text('黑名单管理')],
                   ),
                 ),
               ],
@@ -206,9 +195,8 @@ class _FollowPageState extends State<FollowPage>
                   //   _onHandleTag(value, item);
                   // }
                   try {
-                    Get.find<FollowChildController>(
-                      tag: '$_tag${item.tagid}',
-                    ).animateToTop();
+                    Get.find<FollowChildController>(tag: '$_tag${item.tagid}')
+                        .animateToTop();
                   } catch (_) {}
                 }
               },

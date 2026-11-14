@@ -107,10 +107,7 @@ class DynamicPanel extends StatelessWidget {
                 :final items,
               ))
                 if (items != null && items.isNotEmpty)
-                  dynInteraction(
-                    theme: theme,
-                    items: items,
-                  ),
+                  dynInteraction(theme: theme, items: items),
               ActionPanel(item: item),
               if (item.modules.moduleFold case final moduleFold?) ...[
                 Divider(
@@ -137,10 +134,7 @@ class DynamicPanel extends StatelessWidget {
           ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: child,
-      ),
+      child: Padding(padding: const EdgeInsets.only(bottom: 8), child: child),
     );
   }
 
@@ -202,11 +196,7 @@ class DynamicPanel extends StatelessWidget {
         morePanel(context);
         return;
     }
-    imageSaveDialog(
-      title: title,
-      cover: cover,
-      bvid: bvid,
-    );
+    imageSaveDialog(title: title, cover: cover, bvid: bvid);
   }
 
   Widget _buildFoldItem(ThemeData theme, ModuleFold moduleFold) {
@@ -217,11 +207,7 @@ class DynamicPanel extends StatelessWidget {
         fontSize: 13,
         color: theme.colorScheme.outline,
       ),
-      strutStyle: const StrutStyle(
-        height: 1,
-        leading: 0,
-        fontSize: 13,
-      ),
+      strutStyle: const StrutStyle(height: 1, leading: 0, fontSize: 13),
       TextSpan(
         children: [
           TextSpan(text: moduleFold.statement ?? '展开'),
@@ -274,11 +260,7 @@ class DynamicPanel extends StatelessWidget {
           fontSize: 13,
           color: theme.colorScheme.onSecondaryContainer,
         ),
-        strutStyle: const StrutStyle(
-          leading: 0,
-          height: 1,
-          fontSize: 13,
-        ),
+        strutStyle: const StrutStyle(leading: 0, height: 1, fontSize: 13),
         TextSpan(
           children: [
             WidgetSpan(

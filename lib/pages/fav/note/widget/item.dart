@@ -69,10 +69,7 @@ class FavNoteItem extends StatelessWidget {
                             height: boxConstraints.maxHeight,
                           ),
                           Positioned.fill(
-                            child: selectMask(
-                              colorScheme,
-                              item.checked,
-                            ),
+                            child: selectMask(colorScheme, item.checked),
                           ),
                         ],
                       );
@@ -87,10 +84,7 @@ class FavNoteItem extends StatelessWidget {
                       item.title ?? '',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        height: 1.4,
-                        fontSize: 14,
-                      ),
+                      style: const TextStyle(height: 1.4, fontSize: 14),
                     ),
                     const Spacer(),
                     Text(

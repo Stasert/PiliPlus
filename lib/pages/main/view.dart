@@ -1,3 +1,9 @@
+import 'package:PiliPlus/utils/accounts.dart';
+import 'package:PiliPlus/pages/login/controller.dart';
+
+import 'dart:async';
+
+import 'package:PiliPlus/utils/ios/native_tab_tools.dart';
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
 
 import 'dart:io';
@@ -12,7 +18,6 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
-import 'package:PiliPlus/models/common/dynamic/dynamic_badge_mode.dart';
 import 'package:PiliPlus/utils/ios/native_page_actions.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
@@ -48,6 +53,7 @@ class _MainAppState extends PopScopeState<MainApp>
   Brightness? _brightness;
   ModalRoute<dynamic>? _homeRoute;
   bool _homeToolsScheduled = false;
+  StreamSubscription<void>? _accountsListener;
 
   @override
   bool get initCanPop => false;
@@ -77,6 +83,12 @@ class _MainAppState extends PopScopeState<MainApp>
         ),
         ever(_mainController.msgUnReadCount, (_) => _scheduleHomeTools()),
       ]);
+      _accountsListener = Accounts.account.watch().listen(
+        (_) => _scheduleHomeTools(),
+      );
+      _nativeTabBarWorkers.add(
+        ever(_mainController.accountService.face, (_) => _scheduleHomeTools()),
+      );
       _attachNativeTabBar();
     }
   }
@@ -97,46 +109,47 @@ class _MainAppState extends PopScopeState<MainApp>
       if (!mounted || _homeRoute == null) {
         return;
       }
-      final isHome =
-          _mainController.navigationBars[_mainController.selectedIndex.value] ==
-          NavigationBarType.home;
-      if (!IOSNativeTabBar.rightRailDevice.value || !isHome) {
+      if (!IOSNativeTabBar.rightRailDevice.value) {
         IOSNativeTabBar.removePageActions(_homeRoute!);
         return;
       }
-      final loggedIn = _mainController.accountService.isLogin.value;
-      final count = _mainController.msgUnReadCount.value;
-      final badgeMode = _mainController.msgBadgeMode;
+      final tools = nativeTabTools(
+        loggedIn: _mainController.accountService.isLogin.value,
+        hasAccount: Accounts.account.isNotEmpty,
+        unread: _mainController.msgUnReadCount.value,
+        badgeMode: _mainController.msgBadgeMode,
+        face: _mainController.accountService.face.value,
+      );
       IOSNativeTabBar.setPageActions(
         route: _homeRoute!,
         homeTools: true,
         actions: [
-          const NativePageAction(id: 'search', title: '搜索'),
-          NativePageAction(
-            id: 'notifications',
-            title: '消息',
-            badge:
-                loggedIn &&
-                    badgeMode != DynamicBadgeMode.hidden &&
-                    count != null
-                ? (badgeMode == DynamicBadgeMode.number ? count : '')
-                : null,
-          ),
+          for (final tool in tools)
+            NativePageAction(
+              id: tool.id,
+              title: tool.title,
+              badge: tool.badge,
+              symbol: tool.symbol,
+              image: tool.image,
+              group: tool.group,
+            ),
         ],
-        onAction: (id) {
-          if (!mounted ||
-              !(_homeRoute?.isCurrent ?? false) ||
-              _mainController.navigationBars[_mainController
-                      .selectedIndex
-                      .value] !=
-                  NavigationBarType.home) {
-            return;
-          }
+        onAction: (id) async {
+          if (!mounted || !(_homeRoute?.isCurrent ?? false)) return;
           switch (id) {
+            case 'mine':
+              if (_mainController.accountService.isLogin.value ||
+                  Accounts.account.isNotEmpty) {
+                await LoginPageController.switchAccountDialog(context);
+              }
+              _mainController.toMinePage();
+
             case 'search':
               Get.toNamed(
                 '/search',
-                parameters: _mainController.homeController.enableSearchWord
+                parameters:
+                    _mainController.hasHome &&
+                        _mainController.homeController.enableSearchWord
                     ? {
                         'hintText':
                             _mainController.homeController.defaultSearch.value,
@@ -280,6 +293,7 @@ class _MainAppState extends PopScopeState<MainApp>
     }
     PiliScheme.listener?.cancel();
     GStorage.close();
+    _accountsListener?.cancel();
     super.dispose();
   }
 
@@ -376,10 +390,7 @@ class _MainAppState extends PopScopeState<MainApp>
         if (_mainController.barOffset case final barOffset?) {
           return Obx(
             () => FractionalTranslation(
-              translation: Offset(
-                0.0,
-                barOffset.value / Style.topBarHeight,
-              ),
+              translation: Offset(0.0, barOffset.value / Style.topBarHeight),
               child: bottomNav,
             ),
           );
@@ -468,10 +479,7 @@ class _MainAppState extends PopScopeState<MainApp>
                                 )
                               : Text(e.label),
                           icon: _buildIcon(type: e),
-                          selectedIcon: _buildIcon(
-                            type: e,
-                            selected: true,
-                          ),
+                          selectedIcon: _buildIcon(type: e, selected: true),
                         ),
                       )
                       .toList(),
@@ -619,19 +627,17 @@ class _MainAppState extends PopScopeState<MainApp>
   Widget _buildIcon({required NavigationBarType type, bool selected = false}) {
     final icon = selected ? type.selectIcon : type.icon;
     return type == .dynamics
-        ? Obx(
-            () {
-              final dynCount = _mainController.dynCount.value;
-              return Badge(
-                isLabelVisible: dynCount > 0,
-                label: _mainController.dynamicBadgeMode == .number
-                    ? Text(dynCount.toString())
-                    : null,
-                padding: const .symmetric(horizontal: 6),
-                child: icon,
-              );
-            },
-          )
+        ? Obx(() {
+            final dynCount = _mainController.dynCount.value;
+            return Badge(
+              isLabelVisible: dynCount > 0,
+              label: _mainController.dynamicBadgeMode == .number
+                  ? Text(dynCount.toString())
+                  : null,
+              padding: const .symmetric(horizontal: 6),
+              child: icon,
+            );
+          })
         : icon;
   }
 
@@ -643,10 +649,7 @@ class _MainAppState extends PopScopeState<MainApp>
         msgBadge(_mainController),
         IconButton(
           tooltip: '搜索',
-          icon: const Icon(
-            Icons.search_outlined,
-            semanticLabel: '搜索',
-          ),
+          icon: const Icon(Icons.search_outlined, semanticLabel: '搜索'),
           onPressed: () => Get.toNamed('/search'),
         ),
       ],

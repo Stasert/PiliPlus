@@ -29,30 +29,9 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
   late List<double> speedList = Pref.speedList;
   late bool enableAutoLongPressSpeed = Pref.enableAutoLongPressSpeed;
   List<({int id, String title, Icon icon})> sheetMenu = [
-    (
-      id: 1,
-      title: '设置为默认倍速',
-      icon: const Icon(
-        Icons.speed,
-        size: 21,
-      ),
-    ),
-    (
-      id: 2,
-      title: '设置为默认长按倍速',
-      icon: const Icon(
-        Icons.speed_sharp,
-        size: 21,
-      ),
-    ),
-    (
-      id: -1,
-      title: '删除该项',
-      icon: const Icon(
-        Icons.delete_outline,
-        size: 21,
-      ),
-    ),
+    (id: 1, title: '设置为默认倍速', icon: const Icon(Icons.speed, size: 21)),
+    (id: 2, title: '设置为默认长按倍速', icon: const Icon(Icons.speed_sharp, size: 21)),
+    (id: -1, title: '删除该项', icon: const Icon(Icons.delete_outline, size: 21)),
   ];
 
   Box video = GStorage.video;
@@ -141,10 +120,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
                 minLeadingWidth: 0,
                 iconColor: theme.colorScheme.onSurface,
                 leading: item.icon,
-                title: Text(
-                  item.title,
-                  style: const TextStyle(fontSize: 14),
-                ),
+                title: Text(item.title, style: const TextStyle(fontSize: 14)),
               ),
             ),
             SizedBox(height: 25 + MediaQuery.viewPaddingOf(context).bottom),
@@ -167,11 +143,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
       longPressSpeedDefault = speed;
       video.put(VideoBoxKey.longPressSpeedDefault, longPressSpeedDefault);
     } else if (id == -1) {
-      if ([
-        1.0,
-        playSpeedDefault,
-        longPressSpeedDefault,
-      ].contains(speed)) {
+      if ([1.0, playSpeedDefault, longPressSpeedDefault].contains(speed)) {
         SmartDialog.showToast('不支持删除默认倍速');
         return;
       }
@@ -244,24 +216,14 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
               ),
               child: Row(
                 children: [
-                  Text(
-                    '倍速列表',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                  Text('倍速列表', style: theme.textTheme.titleMedium),
                   const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: onAddSpeed,
-                    child: const Text('添加'),
-                  ),
+                  TextButton(onPressed: onAddSpeed, child: const Text('添加')),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(
-                left: 18,
-                right: 18,
-                bottom: 30,
-              ),
+              padding: const EdgeInsets.only(left: 18, right: 18, bottom: 30),
               child: Wrap(
                 alignment: WrapAlignment.start,
                 spacing: 8,

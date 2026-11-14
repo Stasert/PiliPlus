@@ -152,10 +152,7 @@ class _AboutPageState extends State<AboutPage> {
                 : () => Utils.copyText(currentVersion),
             title: const Text('当前版本'),
             leading: const Icon(Icons.commit_outlined),
-            trailing: Text(
-              currentVersion,
-              style: subTitleStyle,
-            ),
+            trailing: Text(currentVersion, style: subTitleStyle),
           ),
           ListTile(
             title: Text(
@@ -234,10 +231,7 @@ Commit Hash: ${BuildConfig.commitHash}''',
             leading: const Icon(Icons.delete_outline),
             title: const Text('清除缓存'),
             subtitle: Obx(
-              () => Text(
-                '图片及网络缓存 ${cacheSize.value}',
-                style: subTitleStyle,
-              ),
+              () => Text('图片及网络缓存 ${cacheSize.value}', style: subTitleStyle),
             ),
           ),
           ListTile(

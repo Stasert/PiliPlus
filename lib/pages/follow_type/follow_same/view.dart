@@ -17,10 +17,7 @@ class FollowSamePage extends StatefulWidget {
     if (mid == null) return;
     Get.toNamed(
       '/sameFollowing',
-      arguments: {
-        'mid': safeToInt(mid),
-        'name': name,
-      },
+      arguments: {'mid': safeToInt(mid), 'name': name},
     );
   }
 }
@@ -35,11 +32,9 @@ class _FollowSamePageState extends FollowTypePageState<FollowSamePage> {
   @override
   PreferredSizeWidget get appBar => AppBar(
     automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-    title: Obx(
-      () {
-        final name = controller.name.value;
-        return Text('${name == null ? '' : '我与$name的'}共同关注');
-      },
-    ),
+    title: Obx(() {
+      final name = controller.name.value;
+      return Text('${name == null ? '' : '我与$name的'}共同关注');
+    }),
   );
 }

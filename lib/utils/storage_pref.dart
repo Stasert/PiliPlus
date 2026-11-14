@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:PiliPlus/common/widgets/rail_page_view.dart';
+
 import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart'
     show deviceTouchSlop;
 import 'package:PiliPlus/common/widgets/pair.dart';
@@ -16,6 +18,7 @@ import 'package:PiliPlus/models/common/member/tab_type.dart';
 import 'package:PiliPlus/models/common/mine_tab_type.dart';
 import 'package:PiliPlus/models/common/msg/msg_unread_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
+import 'package:PiliPlus/models/common/rcmd_source.dart';
 import 'package:PiliPlus/models/common/reply/reply_sort_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/segment_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/skip_type.dart';
@@ -144,13 +147,11 @@ abstract final class Pref {
     if (list == null || list.length != SegmentType.values.length) {
       return SegmentType.values.map((i) => i.color).toList();
     }
-    return SegmentType.values.map(
-      (item) {
-        final String e = list[item.index];
-        final color = e.isNotEmpty ? int.tryParse('FF$e', radix: 16) : null;
-        return color != null ? Color(color) : item.color;
-      },
-    ).toList();
+    return SegmentType.values.map((item) {
+      final String e = list[item.index];
+      final color = e.isNotEmpty ? int.tryParse('FF$e', radix: 16) : null;
+      return color != null ? Color(color) : item.color;
+    }).toList();
   }
 
   static bool get feedBackEnable =>
@@ -302,6 +303,15 @@ abstract final class Pref {
   static bool get appRcmd =>
       _setting.get(SettingBoxKey.appRcmd, defaultValue: true);
 
+  /// 首页推荐来源。新键优先，旧版本只存了 [appRcmd] 布尔值，按原语义映射。
+  static RcmdSource get rcmdSource {
+    final index = _setting.get(SettingBoxKey.rcmdSource, defaultValue: -1);
+    if (index >= 0 && index < RcmdSource.values.length) {
+      return RcmdSource.values[index];
+    }
+    return appRcmd ? RcmdSource.app : RcmdSource.web;
+  }
+
   static String get systemProxyHost =>
       _setting.get(SettingBoxKey.systemProxyHost, defaultValue: '');
 
@@ -330,9 +340,8 @@ abstract final class Pref {
   static String get blockUserID {
     String? blockUserID = _setting.get(SettingBoxKey.blockUserID);
     if (blockUserID == null || blockUserID.isEmpty) {
-      blockUserID = Digest(
-        List.generate(16, (_) => Utils.random.nextInt(256)),
-      ).toString();
+      blockUserID = Digest(List.generate(16, (_) => Utils.random.nextInt(256)))
+          .toString();
       _setting.put(SettingBoxKey.blockUserID, blockUserID);
     }
     return blockUserID;
@@ -657,6 +666,10 @@ abstract final class Pref {
       ? .on
       : .off;
 
+  static double get railContentMargin => RailSpacing.normalizeClearance(
+    _setting.get(SettingBoxKey.railContentMargin),
+  );
+
   static InnerVideoDetailLayout get innerVideoDetailLayout =>
       InnerVideoDetailLayout.fromStorage(
         _setting.get(SettingBoxKey.innerVideoDetailLayout),
@@ -717,8 +730,13 @@ abstract final class Pref {
 
   static bool get dynamicsWaterfallFlow => _setting.get(
     SettingBoxKey.dynamicsWaterfallFlow,
-    defaultValue: horizontalScreen,
+    defaultValue: dynamicsWaterfallFlowDefault,
   );
+
+  /// 折叠屏 iPhone 默认开启瀑布流：列数按宽度自动决定，合上时单列、展开时
+  /// 双列。只在启动时读取一次，不能跟着启动时是否展开走
+  static bool get dynamicsWaterfallFlowDefault =>
+      IOSFoldableHelper.isAuto || horizontalScreen;
 
   static bool get hideTopBar => _setting.get(
     SettingBoxKey.hideTopBar,
@@ -817,6 +835,14 @@ abstract final class Pref {
 
   static bool get enableHA =>
       _setting.get(SettingBoxKey.enableHA, defaultValue: true);
+
+  /// iOS: play HDR / Dolby Vision videos with the system player (AVPlayer).
+  static bool get systemPlayerHdr =>
+      _setting.get(SettingBoxKey.systemPlayerHdr, defaultValue: true);
+
+  /// iOS, experimental: play every on-demand video with the system player.
+  static bool get systemPlayerAll =>
+      _setting.get(SettingBoxKey.systemPlayerAll, defaultValue: false);
 
   static Set<int> get danmakuBlockType => Set<int>.from(
     _setting.get(SettingBoxKey.danmakuBlockType, defaultValue: const <int>{}),
@@ -1129,4 +1155,16 @@ abstract final class Pref {
 
   static bool get filterIntro =>
       _setting.get(SettingBoxKey.filterIntro, defaultValue: false);
+
+  static int get foldDepth =>
+      _setting.get(SettingBoxKey.foldDepth, defaultValue: 0);
+
+  static bool get showRefreshFAB =>
+      _setting.get(SettingBoxKey.showRefreshFAB, defaultValue: true);
+
+  static bool get cachePlayInfo =>
+      _setting.get(SettingBoxKey.cachePlayInfo, defaultValue: true);
+
+  static bool get autoWearMedal =>
+      _setting.get(SettingBoxKey.autoWearMedal, defaultValue: false);
 }

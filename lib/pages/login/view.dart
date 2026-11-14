@@ -112,9 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: PrettyQrView.data(
                   data: response.url,
                   decoration: const PrettyQrDecoration(
-                    shape: PrettyQrSquaresSymbol(
-                      color: Colors.black87,
-                    ),
+                    shape: PrettyQrSquaresSymbol(color: Colors.black87),
                   ),
                 ),
               ),
@@ -133,29 +131,24 @@ class _LoginPageState extends State<LoginPage> {
             style: TextStyle(color: theme.colorScheme.secondaryFixedDim),
           ),
         ),
-        Obx(
-          () {
-            final url = _loginPageCtr.codeInfo.value.dataOrNull?.url ?? '';
-            return GestureDetector(
-              onTap: () => Utils.copyText(
+        Obx(() {
+          final url = _loginPageCtr.codeInfo.value.dataOrNull?.url ?? '';
+          return GestureDetector(
+            onTap: () => Utils.copyText(
+              url,
+              toastText: '已复制到剪贴板，可粘贴至已登录的app私信处发送，然后点击已发送的链接打开',
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Text(
                 url,
-                toastText: '已复制到剪贴板，可粘贴至已登录的app私信处发送，然后点击已发送的链接打开',
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-                child: Text(
-                  url,
-                  style: theme.textTheme.labelSmall!.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                  ),
+                style: theme.textTheme.labelSmall!.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
@@ -292,9 +285,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text("试试扫码、手机号登录，或选择"),
                       ),
                       ListTile(
-                        title: const Text(
-                          '找回密码（手机版）',
-                        ),
+                        title: const Text('找回密码（手机版）'),
                         leading: const Icon(Icons.smartphone_outlined),
                         subtitle: const Text(
                           'https://passport.bilibili.com/h5-app/passport/login/findPassword',

@@ -33,10 +33,8 @@ class _RankPageState extends State<RankPage>
             controller: _rankController.tabController,
             children: RankType.values
                 .map(
-                  (item) => ZonePage(
-                    rid: item.rid,
-                    seasonType: item.seasonType,
-                  ),
+                  (item) =>
+                      ZonePage(rid: item.rid, seasonType: item.seasonType),
                 )
                 .toList(),
           ),

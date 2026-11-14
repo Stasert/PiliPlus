@@ -20,13 +20,7 @@ class MemberVideoWeb extends StatefulWidget {
     required Object mid,
     required String name,
   }) {
-    return Get.toNamed(
-      '/videoWeb',
-      arguments: {
-        'mid': mid,
-        'name': name,
-      },
-    );
+    return Get.toNamed('/videoWeb', arguments: {'mid': mid, 'name': name});
   }
 }
 

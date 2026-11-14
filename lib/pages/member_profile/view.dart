@@ -257,20 +257,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _sexDialogItem(
-    int sex,
-    int current,
-    String text,
-  ) {
+  Widget _sexDialogItem(int sex, int current, String text) {
     return ListTile(
       dense: true,
       enabled: current != sex,
       title: Padding(
         padding: const EdgeInsets.only(left: 10),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 14),
-        ),
+        child: Text(text, style: const TextStyle(fontSize: 14)),
       ),
       trailing: current == sex ? const Icon(size: 22, Icons.check) : null,
       onTap: () {
@@ -339,10 +332,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     ).whenComplete(_textController.clear);
   }
 
-  Future<void> _update({
-    required ProfileType type,
-    dynamic datum,
-  }) async {
+  Future<void> _update({required ProfileType type, dynamic datum}) async {
     final accessKey = Accounts.main.accessKey;
     if (accessKey == null || accessKey.isEmpty) {
       SmartDialog.showToast('请退出账号后重新登录');
@@ -371,9 +361,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         .post(
           '/x/member/app/${type.name}/update',
           data: data,
-          options: Options(
-            contentType: Headers.formUrlEncodedContentType,
-          ),
+          options: Options(contentType: Headers.formUrlEncodedContentType),
         )
         .then((res) {
           if (res.data['code'] == 0) {
@@ -433,10 +421,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       dense: title != '头像',
       leading: Text(
         title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.normal,
-        ),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
       ),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -457,10 +442,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           else
             ?widget,
           if (needIcon)
-            Icon(
-              Icons.keyboard_arrow_right,
-              color: theme.colorScheme.outline,
-            )
+            Icon(Icons.keyboard_arrow_right, color: theme.colorScheme.outline)
           else
             const SizedBox(width: 24),
         ],
@@ -516,9 +498,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Request()
               .post(
                 '/x/member/web/face/update',
-                queryParameters: {
-                  'csrf': Accounts.main.csrf,
-                },
+                queryParameters: {'csrf': Accounts.main.csrf},
                 data: FormData.fromMap({
                   'dopost': 'save',
                   'DisplayRank': 10000,

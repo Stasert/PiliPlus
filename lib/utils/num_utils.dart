@@ -60,6 +60,26 @@ abstract final class NumUtils {
     }
   }
 
+  /// 最多 4 个字的数量，放进窄按钮（iPhone Duo 竖状态栏）。一律向下取整，
+  /// 不会显示得比实际多：9999、1.2万、12万、999万、1千万…9千万、1.2亿、
+  /// 12亿、999亿，更大的也显示 999亿
+  static String compactCount(int number) {
+    if (number < 10000) return number < 0 ? '0' : '$number';
+    String withUnit(int unit, String suffix) {
+      final tenths = number * 10 ~/ unit;
+      if (tenths >= 100) return '${tenths ~/ 10}$suffix';
+      final decimal = tenths % 10;
+      return decimal == 0
+          ? '${tenths ~/ 10}$suffix'
+          : '${tenths ~/ 10}.$decimal$suffix';
+    }
+
+    if (number < 10000000) return withUnit(10000, '万');
+    if (number < 100000000) return '${number ~/ 10000000}千万';
+    if (number < 100000000000) return withUnit(100000000, '亿');
+    return '999亿';
+  }
+
   static String formatPositiveDecimal(int number) {
     if (number < 1000) return number.toString();
 

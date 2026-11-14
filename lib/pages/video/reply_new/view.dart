@@ -118,24 +118,22 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
   Widget? get customPanel => EmotePanel(onChoose: onChooseEmote);
 
   Widget buildImagePreview() {
-    return Obx(
-      () {
-        if (imageList.isNotEmpty) {
-          return SizedBox(
-            height: 85,
-            child: ListView.separated(
-              scrollDirection: .horizontal,
-              padding: const .fromLTRB(15, 0, 15, 10),
-              itemCount: imageList.length,
-              itemBuilder: (_, index) => buildImage(index, 75),
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-            ),
-          );
-        } else {
-          return const SizedBox.shrink();
-        }
-      },
-    );
+    return Obx(() {
+      if (imageList.isNotEmpty) {
+        return SizedBox(
+          height: 85,
+          child: ListView.separated(
+            scrollDirection: .horizontal,
+            padding: const .fromLTRB(15, 0, 15, 10),
+            itemCount: imageList.length,
+            itemBuilder: (_, index) => buildImage(index, 75),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+          ),
+        );
+      } else {
+        return const SizedBox.shrink();
+      }
+    });
   }
 
   List<Widget> buildInputView() {
@@ -159,10 +157,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
           style: theme.textTheme.bodyLarge,
         ),
       ),
-      Divider(
-        height: 1,
-        color: theme.dividerColor.withValues(alpha: 0.1),
-      ),
+      Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
       Container(
         height: 52,
         padding: const EdgeInsets.only(left: 12, right: 12),
@@ -433,9 +428,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
     _replaceBlocks(spans, rawText);
     _latexOn.value = true;
     if (warnings.isNotEmpty) {
-      SmartDialog.showToast(
-        '无法识别：${warnings.join('、')}（已保留原文）',
-      );
+      SmartDialog.showToast('无法识别：${warnings.join('、')}（已保留原文）');
     }
   }
 
@@ -453,10 +446,7 @@ class _ReplyPageState extends CommonRichTextPubPageState<ReplyPage> {
       final delta = RichTextEditingDeltaReplacement(
         oldText: oldValue.text,
         replacementText: item.rawText,
-        replacedRange: TextRange(
-          start: item.range.start,
-          end: item.range.end,
-        ),
+        replacedRange: TextRange(start: item.range.start, end: item.range.end),
         selection: TextSelection.collapsed(
           offset: item.range.start + item.rawText.length,
         ),

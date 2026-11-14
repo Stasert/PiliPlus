@@ -47,6 +47,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:nativeapi/nativeapi.dart' as nativeapi show Size, Rectangle;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -59,6 +60,7 @@ EdgeInsets? tmpPadding;
 final nativeNavigationObserver = NativeNavigationObserver(
   onCanGoBackChanged: IOSNativeTabBar.setCanGoBack,
   onTopRouteChanged: IOSNativeTabBar.setTopRoute,
+  onModalOverlayChanged: IOSNativeTabBar.setModalOverlayVisible,
 );
 
 Future<void> _onNativeBack() async {
@@ -138,10 +140,13 @@ void main() async {
       IOSNativeTabBar.onBack = _onNativeBack;
       IOSNativeTabBar.onReturnToRoot = nativeNavigationObserver.returnToRoot;
       await IOSFoldableHelper.init();
+      // iPhone Duo 竖状态栏里的返回键，和 Esc 键走同一套逻辑
+      // 竖状态栏里有返回键时，页面左上角不再重复显示
+      AppBar.hideImpliedBackButton = IOSNativeTabBar.hidesPageBackButton;
     }
     await Future.wait([
       if (Platform.isIOS)
-        IOSFoldableHelper.applyOrientation()
+        ?IOSFoldableHelper.applyOrientation()
       else if (Pref.horizontalScreen)
         ?fullMode()
       else
@@ -228,13 +233,21 @@ void main() async {
   if (PlatformUtils.isDesktop) {
     final window = WindowManager.instance.getCurrent();
     if (window != null) {
+      final showTitleBar = Pref.showWindowTitleBar;
+      // macOS 隐藏标题栏时改用 contentUnderTitleBar，保持窗口可拖动
+      final useContentUnderTitleBar = Platform.isMacOS && !showTitleBar;
+      final (nativeapi.Size minSize, nativeapi.Rectangle bounds) =
+          calcWindowBounds();
       window
-        ..titleBarStyle = Pref.showWindowTitleBar ? .normal : .hidden
+        ..titleBarStyle = useContentUnderTitleBar || showTitleBar
+            ? .normal
+            : .hidden
         ..isWindowControlButtonsVisible = true
-        ..bounds = calcWindowBounds()
-        ..minimumSize = DeviceUtils.desktopMinSize
+        ..bounds = bounds
+        ..minimumSize = minSize
         ..isVisibleInTaskbar = true
         ..title = Constants.appName;
+      if (useContentUnderTitleBar) window.setContentUnderTitleBar(true);
       if (Pref.isWindowMaximized) window.maximize();
       void show([_]) => window
         ..focus()
@@ -378,10 +391,7 @@ class MyApp extends StatelessWidget {
       );
     }
     if (PlatformUtils.isDesktop) {
-      return BackDetector(
-        onBack: _onBack,
-        child: child,
-      );
+      return BackDetector(onBack: _onBack, child: child);
     }
     return child;
   }

@@ -17,11 +17,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberCoinArcPage extends StatefulWidget {
-  const MemberCoinArcPage({
-    super.key,
-    required this.mid,
-    this.name,
-  });
+  const MemberCoinArcPage({super.key, required this.mid, this.name});
 
   final dynamic mid;
   final String? name;
@@ -49,9 +45,7 @@ class _MemberCoinArcPageState extends State<MemberCoinArcPage> {
     return SimpleScaffold(
       appBar: AppBar(
         automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-        title: Text(
-          '${widget.mid == mid ? '我' : '${widget.name}'}的最近投币',
-        ),
+        title: Text('${widget.mid == mid ? '我' : '${widget.name}'}的最近投币'),
       ),
       body: refreshIndicator(
         onRefresh: _ctr.onRefresh,

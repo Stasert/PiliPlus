@@ -56,6 +56,7 @@ class _LivePageState extends State<LivePage>
     super.build(context);
     return RailFeedFrame(
       child: refreshIndicator(
+        key: controller.refreshKey,
         onRefresh: controller.onRefresh,
         child: CustomScrollView(
           controller: controller.scrollController,
@@ -83,9 +84,7 @@ class _LivePageState extends State<LivePage>
         areaHeight: areaHeight + 16 /* padding */,
         backgroundColor: colorScheme.surface,
         callback: controller.onTopHeightChanged,
-        child: Column(
-          children: [..._buildFollowList(follow), area],
-        ),
+        child: Column(children: [..._buildFollowList(follow), area]),
       );
     }
 
@@ -127,10 +126,8 @@ class _LivePageState extends State<LivePage>
                       textColor: isCurr
                           ? colorScheme.onSecondaryContainer
                           : null,
-                      onTap: (_) => controller.onSelectArea(
-                        index,
-                        isFirst ? null : item,
-                      ),
+                      onTap: (_) =>
+                          controller.onSelectArea(index, isFirst ? null : item),
                     );
                   },
                   itemCount: list.length + 1,
@@ -287,17 +284,11 @@ class _LivePageState extends State<LivePage>
                 const TextSpan(text: '我的关注  '),
                 TextSpan(
                   text: totalCount.toString(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.primary,
-                  ),
+                  style: TextStyle(fontSize: 13, color: colorScheme.primary),
                 ),
                 TextSpan(
                   text: '人正在直播',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.outline,
-                  ),
+                  style: TextStyle(fontSize: 13, color: colorScheme.outline),
                 ),
               ],
             ),
@@ -314,10 +305,7 @@ class _LivePageState extends State<LivePage>
     }
   }
 
-  Widget _buildFollowBody(
-    List<CardLiveItem> followList,
-    int totalCount,
-  ) {
+  Widget _buildFollowBody(List<CardLiveItem> followList, int totalCount) {
     final listLength = followList.length;
     return SizedBox(
       // 3+4+45+6+2+12*textScaler

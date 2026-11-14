@@ -201,10 +201,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                 Get.back();
                 _pickImg(context);
               },
-              child: const Text(
-                '替换封面',
-                style: TextStyle(fontSize: 14),
-              ),
+              child: const Text('替换封面', style: TextStyle(fontSize: 14)),
             ),
             DialogOption(
               onPressed: () {
@@ -212,10 +209,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                 _cover = null;
                 (context as Element).markNeedsBuild();
               },
-              child: const Text(
-                '移除封面',
-                style: TextStyle(fontSize: 14),
-              ),
+              child: const Text('移除封面', style: TextStyle(fontSize: 14)),
             ),
           ],
         ),
@@ -305,9 +299,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                           ? theme.colorScheme.outline
                           : null,
                     ),
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(20),
-                    ],
+                    inputFormatters: [LengthLimitingTextInputFormatter(20)],
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: '名称',
@@ -348,9 +340,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
                       maxLines: 6,
                       controller: _introController,
                       style: const TextStyle(fontSize: 14),
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(200),
-                      ],
+                      inputFormatters: [LengthLimitingTextInputFormatter(200)],
                       decoration: InputDecoration(
                         isDense: true,
                         hintText: '可填写简介',
@@ -379,10 +369,7 @@ class _CreateFavPageState extends State<CreateFavPage> {
               return ListTile(
                 onTap: onTap,
                 tileColor: theme.colorScheme.onInverseSurface,
-                leading: Text(
-                  '公开',
-                  style: leadingStyle,
-                ),
+                leading: Text('公开', style: leadingStyle),
                 trailing: Transform.scale(
                   alignment: Alignment.centerRight,
                   scale: 0.8,

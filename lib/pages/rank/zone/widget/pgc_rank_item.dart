@@ -46,9 +46,7 @@ class PgcRankItem extends StatelessWidget {
                       width: constraints.maxWidth,
                       height: constraints.maxHeight,
                       src: item.cover,
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(6),
-                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(6)),
                     );
                   },
                 ),
@@ -58,9 +56,7 @@ class PgcRankItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(item.title!),
-                    ),
+                    Expanded(child: Text(item.title!)),
                     if (item.newEp?.indexShow?.isNotEmpty == true) ...[
                       Text(
                         item.newEp!.indexShow!,
@@ -76,10 +72,7 @@ class PgcRankItem extends StatelessWidget {
                     ],
                     Row(
                       children: [
-                        StatWidget(
-                          type: StatType.play,
-                          value: item.stat!.view,
-                        ),
+                        StatWidget(type: StatType.play, value: item.stat!.view),
                         const SizedBox(width: 8),
                         StatWidget(
                           type: StatType.follow,

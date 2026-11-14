@@ -68,10 +68,7 @@ class LoginDevicesPageState extends State<LoginDevicesPage> {
         }
         return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 
@@ -79,14 +76,8 @@ class LoginDevicesPageState extends State<LoginDevicesPage> {
     final style = TextStyle(fontSize: 13, color: colorScheme.outline);
     return ListTile(
       dense: true,
-      title: Text(
-        item.deviceName ?? '',
-        style: const TextStyle(fontSize: 14),
-      ),
-      subtitle: Text(
-        '${item.latestLoginAt} ${item.source}',
-        style: style,
-      ),
+      title: Text(item.deviceName ?? '', style: const TextStyle(fontSize: 14)),
+      subtitle: Text('${item.latestLoginAt} ${item.source}', style: style),
       trailing: item.isCurrentDevice == true
           ? Text('(本机)', style: style)
           : null,

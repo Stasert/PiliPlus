@@ -32,6 +32,7 @@ import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -195,7 +196,7 @@ abstract final class RequestUtils {
                   Get.back();
                   final result = await showModalBottomSheet<Set<int>>(
                     context: context,
-                    useSafeArea: true,
+                    useSafeArea: IOSNativeTabBar.sheetUseSafeArea,
                     isScrollControlled: true,
                     constraints: BoxConstraints(
                       maxWidth: min(640, context.mediaQueryShortestSide),

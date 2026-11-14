@@ -13,11 +13,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ReplySearchItem extends StatelessWidget {
-  const ReplySearchItem({
-    super.key,
-    required this.item,
-    required this.type,
-  });
+  const ReplySearchItem({super.key, required this.item, required this.type});
 
   final SearchItem item;
   final ReplySearchType type;
@@ -49,10 +45,7 @@ class ReplySearchItem extends StatelessWidget {
         cover = article.covers.firstOrNull ?? '';
         upNickname = article.upNickname;
     }
-    void onLongPress() => imageSaveDialog(
-      title: title,
-      cover: cover,
-    );
+    void onLongPress() => imageSaveDialog(title: title, cover: cover);
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -81,11 +74,7 @@ class ReplySearchItem extends StatelessWidget {
                           height: boxConstraints.maxHeight,
                         ),
                         if (category != null)
-                          PBadge(
-                            right: 6,
-                            top: 6,
-                            text: category,
-                          ),
+                          PBadge(right: 6, top: 6, text: category),
                         if (duration != null)
                           PBadge(
                             right: 6,

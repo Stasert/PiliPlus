@@ -10,10 +10,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SearchPgcItem extends StatelessWidget {
-  const SearchPgcItem({
-    super.key,
-    required this.item,
-  });
+  const SearchPgcItem({super.key, required this.item});
 
   final SearchPgcItemModel item;
 
@@ -45,11 +42,7 @@ class SearchPgcItem extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  NetworkImgLayer(
-                    width: 111,
-                    height: 148,
-                    src: item.cover,
-                  ),
+                  NetworkImgLayer(width: 111, height: 148, src: item.cover),
                   PBadge(
                     text: item.seasonTypeName,
                     top: 6.0,

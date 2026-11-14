@@ -32,10 +32,7 @@ class _SearchResultPageState extends State<SearchResultPage>
   @override
   void initState() {
     super.initState();
-    _searchResultController = Get.put(
-      SearchResultController(),
-      tag: _tag,
-    );
+    _searchResultController = Get.put(SearchResultController(), tag: _tag);
 
     _tabController = TabController(
       vsync: this,
@@ -111,15 +108,13 @@ class _SearchResultPageState extends State<SearchResultPage>
               controller: _tabController,
               tabs: SearchType.actives
                   .map(
-                    (item) => Obx(
-                      () {
-                        int count = _searchResultController.count[item.index];
-                        return Tab(
-                          text:
-                              '${item.label}${count != -1 ? ' ${count > 99 ? '99+' : count}' : ''}',
-                        );
-                      },
-                    ),
+                    (item) => Obx(() {
+                      int count = _searchResultController.count[item.index];
+                      return Tab(
+                        text:
+                            '${item.label}${count != -1 ? ' ${count > 99 ? '99+' : count}' : ''}',
+                      );
+                    }),
                   )
                   .toList(),
               isScrollable: true,
@@ -135,9 +130,7 @@ class _SearchResultPageState extends State<SearchResultPage>
               indicatorSize: TabBarIndicatorSize.tab,
               labelColor: theme.colorScheme.onSecondaryContainer,
               labelStyle:
-                  TabBarTheme.of(
-                    context,
-                  ).labelStyle?.copyWith(fontSize: 13) ??
+                  TabBarTheme.of(context).labelStyle?.copyWith(fontSize: 13) ??
                   const TextStyle(fontSize: 13),
               dividerColor: Colors.transparent,
               dividerHeight: 0,

@@ -12,11 +12,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class PgcReviewPage extends StatefulWidget {
-  const PgcReviewPage({
-    super.key,
-    required this.name,
-    required this.mediaId,
-  });
+  const PgcReviewPage({super.key, required this.name, required this.mediaId});
 
   final String name;
   final dynamic mediaId;
@@ -73,9 +69,7 @@ class _PgcReviewPageState extends State<PgcReviewPage>
             labelColor: theme.colorScheme.onSecondaryContainer,
             unselectedLabelColor: theme.colorScheme.outline,
             labelStyle:
-                TabBarTheme.of(
-                  context,
-                ).labelStyle?.copyWith(fontSize: 13) ??
+                TabBarTheme.of(context).labelStyle?.copyWith(fontSize: 13) ??
                 const TextStyle(fontSize: 13),
             dividerColor: Colors.transparent,
             tabs: PgcReviewType.values.map((e) => Tab(text: e.label)).toList(),

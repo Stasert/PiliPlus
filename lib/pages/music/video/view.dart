@@ -45,9 +45,7 @@ class _MusicRecommendPageState extends State<MusicRecommendPage>
                 right: padding.right,
                 bottom: padding.bottom + 100,
               ),
-              sliver: Obx(
-                () => _buildBody(_controller.loadingState.value),
-              ),
+              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
             ),
           ],
         ),
@@ -102,10 +100,7 @@ class _MusicRecommendPageState extends State<MusicRecommendPage>
                 final count = _controller.loadingState.value.dataOrNull?.length;
                 return count == null
                     ? const SizedBox.shrink()
-                    : Text(
-                        '共$count条视频',
-                        style: theme.textTheme.labelMedium,
-                      );
+                    : Text('共$count条视频', style: theme.textTheme.labelMedium);
               }),
             ],
           ),

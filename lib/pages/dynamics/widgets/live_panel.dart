@@ -22,11 +22,7 @@ Widget livePanel(
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        NetworkImgLayer(
-          width: 120,
-          height: 75,
-          src: live.cover,
-        ),
+        NetworkImgLayer(width: 120, height: 75, src: live.cover),
         const SizedBox(width: 10),
         Expanded(
           child: Column(

@@ -15,11 +15,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberShop extends StatefulWidget {
-  const MemberShop({
-    super.key,
-    required this.heroTag,
-    required this.mid,
-  });
+  const MemberShop({super.key, required this.heroTag, required this.mid});
 
   final String? heroTag;
   final int mid;
@@ -107,14 +103,10 @@ class _MemberShopState extends State<MemberShop>
                     child: FilledButton.tonal(
                       onPressed: () {
                         if (_controller.clickUrl case final clickUrl?) {
-                          final url = Uri.parse(
-                            clickUrl,
-                          ).queryParameters['url'];
+                          final url = Uri.parse(clickUrl)
+                              .queryParameters['url'];
                           if (url case final url?) {
-                            Get.toNamed(
-                              '/webview',
-                              parameters: {'url': url},
-                            );
+                            Get.toNamed('/webview', parameters: {'url': url});
                           }
                         }
                       },
@@ -131,10 +123,7 @@ class _MemberShopState extends State<MemberShop>
         }
         return sliver;
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 }

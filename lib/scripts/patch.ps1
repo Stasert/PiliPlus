@@ -211,9 +211,14 @@ $RefreshIndicatorPatchMaterial = "lib/scripts/material/refresh_indicator.patch"
 
 $TabsPatchMaterial = "lib/scripts/material/tabs.patch"
 
+# iPhone Duo: lets the app drop the back button AppBar adds by itself when the
+# vertical bar shows one. Applied on every platform, since main.dart sets
+# AppBar.hideImpliedBackButton.
+$AppBarNativeBackPatchMaterial = "lib/scripts/material/app_bar_native_back.patch"
+
 $patches_material = @($ModalBarrierPatchMaterial, $NavigationDrawerPatchMaterial, $PopupMenuPatchMaterial,
                     $FABPatchMaterial, $TextFieldPatchMaterial, $ScaffoldPatchMaterial, $RefreshIndicatorPatchMaterial,
-                    $TabsPatchMaterial)
+                    $TabsPatchMaterial, $AppBarNativeBackPatchMaterial)
 
 $PubCacheDir = "~/.pub-cache"
 

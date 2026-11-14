@@ -83,9 +83,8 @@ class _MemberContributeState extends State<MemberContribute>
                   ),
                   indicatorSize: .tab,
                   labelStyle:
-                      TabBarTheme.of(
-                        context,
-                      ).labelStyle?.copyWith(fontSize: 14) ??
+                      TabBarTheme.of(context).labelStyle
+                          ?.copyWith(fontSize: 14) ??
                       const TextStyle(fontSize: 14),
                   labelColor: theme.colorScheme.onSecondaryContainer,
                   unselectedLabelColor: theme.colorScheme.outline,
@@ -121,23 +120,14 @@ class _MemberContributeState extends State<MemberContribute>
         mid: widget.mid,
         title: item.title,
       ),
-      'article' => MemberArticle(
-        heroTag: widget.heroTag,
-        mid: widget.mid,
-      ),
+      'article' => MemberArticle(heroTag: widget.heroTag, mid: widget.mid),
       'opus' => MemberOpus(
         heroTag: widget.heroTag,
         mid: widget.mid,
         isSingle: isSingle,
       ),
-      'audio' => MemberAudio(
-        heroTag: widget.heroTag,
-        mid: widget.mid,
-      ),
-      'comic' => MemberComic(
-        heroTag: widget.heroTag,
-        mid: widget.mid,
-      ),
+      'audio' => MemberAudio(heroTag: widget.heroTag, mid: widget.mid),
+      'comic' => MemberComic(heroTag: widget.heroTag, mid: widget.mid),
       'season_video' => MemberVideo(
         type: ContributeType.season,
         heroTag: widget.heroTag,
@@ -152,10 +142,7 @@ class _MemberContributeState extends State<MemberContribute>
         seriesId: item.seriesId,
         title: item.title,
       ),
-      'ugcSeason' => SeasonSeriesPage(
-        mid: widget.mid,
-        heroTag: widget.heroTag,
-      ),
+      'ugcSeason' => SeasonSeriesPage(mid: widget.mid, heroTag: widget.heroTag),
       _ => Center(child: Text(item.title!)),
     };
   }

@@ -63,9 +63,7 @@ class _UpPanelState extends State<UpPanel> {
                 ),
                 TextSpan(
                   children: [
-                    TextSpan(
-                      text: 'Live(${upData.liveUsers?.count ?? 0})',
-                    ),
+                    TextSpan(text: 'Live(${upData.liveUsers?.count ?? 0})'),
                     if (!isTop) ...[
                       const TextSpan(text: '\n'),
                       WidgetSpan(

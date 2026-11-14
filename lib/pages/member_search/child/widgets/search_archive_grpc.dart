@@ -22,10 +22,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:material_ui/material_ui.dart';
 
 class SearchArchiveGrpc extends StatelessWidget {
-  const SearchArchiveGrpc({
-    super.key,
-    required this.item,
-  });
+  const SearchArchiveGrpc({super.key, required this.item});
 
   final Arc item;
 
@@ -35,11 +32,8 @@ class SearchArchiveGrpc extends StatelessWidget {
     final bvid = IdUtils.av2bv(arc.aid.toInt());
     final regTitle = Em.regTitle(arc.title);
     final titleStr = regTitle.map((e) => e.text).join();
-    void onLongPress() => imageSaveDialog(
-      bvid: bvid,
-      title: titleStr,
-      cover: arc.pic,
-    );
+    void onLongPress() =>
+        imageSaveDialog(bvid: bvid, title: titleStr, cover: arc.pic);
     return Material(
       type: MaterialType.transparency,
       child: Stack(
@@ -90,11 +84,7 @@ class SearchArchiveGrpc extends StatelessWidget {
                               height: maxHeight,
                             ),
                             if (item.isPugv)
-                              const PBadge(
-                                text: '课堂',
-                                top: 6.0,
-                                right: 6.0,
-                              ),
+                              const PBadge(text: '课堂', top: 6.0, right: 6.0),
                             if (arc.duration > Int64.ZERO)
                               PBadge(
                                 text: DurationUtils.formatDuration(
@@ -208,14 +198,8 @@ class SearchArchiveGrpc extends StatelessWidget {
           Row(
             spacing: 8,
             children: [
-              StatWidget(
-                type: StatType.play,
-                value: arc.stat.view,
-              ),
-              StatWidget(
-                type: StatType.danmaku,
-                value: arc.stat.danmaku,
-              ),
+              StatWidget(type: StatType.play, value: arc.stat.view),
+              StatWidget(type: StatType.danmaku, value: arc.stat.danmaku),
             ],
           ),
         ],

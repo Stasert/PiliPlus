@@ -51,10 +51,7 @@ class PayCoinsPage extends StatefulWidget {
         },
         transitionDuration: const Duration(milliseconds: 225),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
       ),
     );
@@ -125,10 +122,7 @@ class _PayCoinsPageState extends State<PayCoinsPage>
       duration: const Duration(milliseconds: 50),
     );
     _slide22Anim = _slide22Controller.drive(
-      Tween<Offset>(
-        begin: Offset.zero,
-        end: const Offset(0.0, -0.2),
-      ),
+      Tween<Offset>(begin: Offset.zero, end: const Offset(0.0, -0.2)),
     );
     _scale22Controller = AnimationController(
       vsync: this,
@@ -157,10 +151,7 @@ class _PayCoinsPageState extends State<PayCoinsPage>
       duration: const Duration(milliseconds: 50),
     );
     _boxAnim = _boxAnimController.drive(
-      Tween<Offset>(
-        begin: Offset.zero,
-        end: const Offset(0.0, -0.2),
-      ),
+      Tween<Offset>(begin: Offset.zero, end: const Offset(0.0, -0.2)),
     );
 
     WidgetsBinding.instance.addPostFrameCallback(_scale);
@@ -312,58 +303,50 @@ class _PayCoinsPageState extends State<PayCoinsPage>
                             _scale();
                             _pageIndex.value = index;
                           },
-                          children: List.generate(
-                            2,
-                            (index) {
-                              return ListenableBuilder(
-                                listenable: _controller!,
-                                builder: (context, child) {
-                                  double factor = index == 0 ? 1 : 0;
-                                  if (_controller!
-                                      .position
-                                      .hasContentDimensions) {
-                                    factor =
-                                        1 - (_controller!.page! - index).abs();
+                          children: List.generate(2, (index) {
+                            return ListenableBuilder(
+                              listenable: _controller!,
+                              builder: (context, child) {
+                                double factor = index == 0 ? 1 : 0;
+                                if (_controller!
+                                    .position
+                                    .hasContentDimensions) {
+                                  factor =
+                                      1 - (_controller!.page! - index).abs();
+                                }
+                                return Obx(() {
+                                  if (_pageIndex.value != index && _isPaying) {
+                                    return const SizedBox.shrink();
                                   }
-                                  return Obx(
-                                    () {
-                                      if (_pageIndex.value != index &&
-                                          _isPaying) {
-                                        return const SizedBox.shrink();
-                                      }
-                                      return _buildCoinWidget(index, factor);
-                                    },
-                                  );
-                                },
-                              );
-                            },
-                          ),
+                                  return _buildCoinWidget(index, factor);
+                                });
+                              },
+                            );
+                          }),
                         ),
                       ),
                     ),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Obx(
-                        () {
-                          final index = _pageIndex.value;
-                          if (_isPaying) {
-                            return const SizedBox.shrink();
-                          }
-                          return GestureDetector(
-                            onTap: index == 0 ? null : () => _onScroll(0),
-                            behavior: HitTestBehavior.opaque,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 12),
-                              child: Image.asset(
-                                width: 16,
-                                height: 28,
-                                index == 0 ? Assets.leftDisable : Assets.left,
-                                cacheWidth: 16.cacheSize(context),
-                              ),
+                      child: Obx(() {
+                        final index = _pageIndex.value;
+                        if (_isPaying) {
+                          return const SizedBox.shrink();
+                        }
+                        return GestureDetector(
+                          onTap: index == 0 ? null : () => _onScroll(0),
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 12),
+                            child: Image.asset(
+                              width: 16,
+                              height: 28,
+                              index == 0 ? Assets.leftDisable : Assets.left,
+                              cacheWidth: 16.cacheSize(context),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      }),
                     ),
                     Align(
                       alignment: Alignment.centerRight,

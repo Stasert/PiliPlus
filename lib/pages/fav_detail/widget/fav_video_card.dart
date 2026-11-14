@@ -26,12 +26,8 @@ class FavVideoCardH extends StatelessWidget {
   final int? index;
   final BaseFavController? ctr;
 
-  const FavVideoCardH({
-    super.key,
-    required this.item,
-    this.index,
-    this.ctr,
-  }) : assert(ctr == null || index != null);
+  const FavVideoCardH({super.key, required this.item, this.index, this.ctr})
+    : assert(ctr == null || index != null);
 
   bool get isSort => ctr == null;
 
@@ -51,10 +47,7 @@ class FavVideoCardH extends StatelessWidget {
         );
         break;
       case 24:
-        PageUtils.viewPgc(
-          seasonId: item.ogv!.seasonId,
-          epId: item.id,
-        );
+        PageUtils.viewPgc(seasonId: item.ogv!.seasonId, epId: item.id);
         break;
       default:
         ctr!.onViewFav(item, index);
@@ -139,10 +132,7 @@ class FavVideoCardH extends StatelessWidget {
                           ),
                         if (!isSort)
                           Positioned.fill(
-                            child: selectMask(
-                              colorScheme,
-                              item.checked,
-                            ),
+                            child: selectMask(colorScheme, item.checked),
                           ),
                       ],
                     );
@@ -170,9 +160,7 @@ class FavVideoCardH extends StatelessWidget {
               Text(
                 item.title!,
                 textAlign: TextAlign.start,
-                style: const TextStyle(
-                  letterSpacing: 0.3,
-                ),
+                style: const TextStyle(letterSpacing: 0.3),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -181,10 +169,7 @@ class FavVideoCardH extends StatelessWidget {
                   item.intro!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.outline,
-                  ),
+                  style: TextStyle(fontSize: 13, color: colorScheme.outline),
                 ),
               const Spacer(),
               Text(
@@ -201,10 +186,7 @@ class FavVideoCardH extends StatelessWidget {
                 Row(
                   spacing: 8,
                   children: [
-                    StatWidget(
-                      type: StatType.play,
-                      value: item.cntInfo?.play,
-                    ),
+                    StatWidget(type: StatType.play, value: item.cntInfo?.play),
                     StatWidget(
                       type: StatType.danmaku,
                       value: item.cntInfo?.danmaku,

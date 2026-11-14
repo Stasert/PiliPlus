@@ -90,40 +90,35 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
     automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
     title: Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: Obx(
-        () {
-          if (controller.infoState.value case Success(:final response)) {
-            final showTitle = controller.showTitle.value;
-            return AnimatedOpacity(
-              opacity: showTitle ? 1 : 0,
-              duration: const Duration(milliseconds: 300),
-              child: IgnorePointer(
-                ignoring: !showTitle,
-                child: Row(
-                  spacing: 8,
-                  children: [
-                    NetworkImgLayer(
-                      src: response.mvCover,
-                      width: 36,
-                      height: 36,
-                      type: ImageType.avatar,
-                    ),
-                    Text(response.musicTitle!),
-                  ],
-                ),
+      child: Obx(() {
+        if (controller.infoState.value case Success(:final response)) {
+          final showTitle = controller.showTitle.value;
+          return AnimatedOpacity(
+            opacity: showTitle ? 1 : 0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !showTitle,
+              child: Row(
+                spacing: 8,
+                children: [
+                  NetworkImgLayer(
+                    src: response.mvCover,
+                    width: 36,
+                    height: 36,
+                    type: ImageType.avatar,
+                  ),
+                  Text(response.musicTitle!),
+                ],
               ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      }),
     ),
     actions: isPortrait
         ? null
-        : [
-            ratioWidget(maxWidth),
-            const SizedBox(width: 16),
-          ],
+        : [ratioWidget(maxWidth), const SizedBox(width: 16)],
   );
 
   Widget _buildBody() => Obx(() {
@@ -142,9 +137,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
                   onVisibilityChanged: controller.showTitle.call,
                   child: _buildCard(response, maxWidth),
                 ),
-                SliverToBoxAdapter(
-                  child: _buildChart(response, maxWidth),
-                ),
+                SliverToBoxAdapter(child: _buildChart(response, maxWidth)),
                 buildReplyHeader(),
                 Obx(() => replyList(controller.loadingState.value)),
               ],
@@ -165,9 +158,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     SliverPadding(
-                      padding: EdgeInsets.only(
-                        left: padding,
-                      ),
+                      padding: EdgeInsets.only(left: padding),
                       sliver: SliverToBoxAdapter(
                         child: _buildCard(response, leftWidth),
                       ),
@@ -195,9 +186,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           buildReplyHeader(),
-                          Obx(
-                            () => replyList(controller.loadingState.value),
-                          ),
+                          Obx(() => replyList(controller.loadingState.value)),
                         ],
                       ),
                     ),
@@ -207,10 +196,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
             ],
           );
         }
-        return ScaffoldLayout(
-          body: child,
-          fab: _buildBottom(response),
-        );
+        return ScaffoldLayout(body: child, fab: _buildBottom(response));
       default:
         return const SizedBox.shrink();
     }
@@ -220,10 +206,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
     if (!controller.showDynActionBar) {
       return Padding(
         padding: const .only(right: kFloatingActionButtonMargin),
-        child: CommentFabTransition(
-          position: fabAnimation,
-          child: fabButton,
-        ),
+        child: CommentFabTransition(position: fabAnimation, child: fabButton),
       );
     }
 
@@ -246,11 +229,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
       final color = status ? primary : outline;
       return TextButton.icon(
         onPressed: onPressed,
-        icon: Icon(
-          status ? activatedIcon : icon,
-          size: 16,
-          color: color,
-        ),
+        icon: Icon(status ? activatedIcon : icon, size: 16, color: color),
         style: style,
         label: Text(
           count != null ? NumUtils.numFormat(count) : text,
@@ -280,9 +259,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
               color: theme.colorScheme.surface,
               border: Border(
                 top: BorderSide(
-                  color: theme.colorScheme.outline.withValues(
-                    alpha: 0.08,
-                  ),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -393,20 +370,13 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
     return child;
   }
 
-  Widget _buildRank(
-    int? rank,
-    String name, [
-    VoidCallback? onTap,
-  ]) {
+  Widget _buildRank(int? rank, String name, [VoidCallback? onTap]) {
     final outline = theme.colorScheme.outline;
     final child = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(NumUtils.numFormat(rank)),
-        Text(
-          name,
-          style: theme.textTheme.bodySmall!.copyWith(color: outline),
-        ),
+        Text(name, style: theme.textTheme.bodySmall!.copyWith(color: outline)),
       ],
     );
     return onTap == null
@@ -420,11 +390,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   child,
-                  Icon(
-                    size: 18,
-                    color: outline,
-                    Icons.keyboard_arrow_right,
-                  ),
+                  Icon(size: 18, color: outline, Icons.keyboard_arrow_right),
                 ],
               ),
             ),

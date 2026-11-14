@@ -95,7 +95,7 @@ void main() {
   };
   for (final entry in variants.entries) {
     testWidgets(
-      '${entry.key} reserves clearance once across scales and system insets',
+      '${entry.key} reserves configured clearance once across scales and system insets',
       (tester) async {
         tester.view.physicalSize = const Size(466 * 2, 678 * 2);
         tester.view.devicePixelRatio = 2;
@@ -105,9 +105,14 @@ void main() {
         addTearDown(() {
           IOSNativeTabBar.rightRailDevice.value = false;
           IOSNativeTabBar.safeArea.value = null;
+          IOSNativeTabBar.railContentMargin.value = RailSpacing.clearance;
         });
         for (final scale in [0.8, 1.0, 1.5]) {
-          for (final raw in [72.0, 84.0, 96.0]) {
+          for (final (raw, margin) in [
+            for (final raw in [72.0, 84.0, 96.0])
+              for (final margin in [0.0, 4.0, 12.0, 32.0]) (raw, margin),
+          ]) {
+            IOSNativeTabBar.railContentMargin.value = margin;
             IOSNativeTabBar.safeArea.value = EdgeInsets.only(right: raw);
             await tester.pumpWidget(
               MaterialApp(
@@ -121,8 +126,8 @@ void main() {
             final nativeClearance = (466 - 72 / scale - edge) * scale;
             expect(
               nativeClearance,
-              closeTo(4, 0.001),
-              reason: '${entry.key}, scale=$scale, system=$raw',
+              closeTo(margin, 0.001),
+              reason: '${entry.key}, scale=$scale, system=$raw, margin=$margin',
             );
             expect(tester.takeException(), isNull);
           }

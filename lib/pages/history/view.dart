@@ -70,10 +70,7 @@ class _HistoryPageState extends State<HistoryPage>
         controller: _historyController.scrollController,
         slivers: [
           SliverPadding(
-            padding: EdgeInsets.only(
-              top: 7,
-              bottom: padding.bottom + 100,
-            ),
+            padding: EdgeInsets.only(top: 7, bottom: padding.bottom + 100),
             sliver: Obx(
               () => _buildBody(_historyController.loadingState.value),
             ),
@@ -84,78 +81,72 @@ class _HistoryPageState extends State<HistoryPage>
     if (widget.type != null) {
       return child;
     }
-    return Obx(
-      () {
-        final enableMultiSelect =
-            _historyController.baseCtr.enableMultiSelect.value;
-        return popScope(
-          canPop: !enableMultiSelect,
-          onPopInvokedWithResult: (didPop, result) {
-            if (enableMultiSelect) {
-              currCtr().handleSelect();
-            }
-          },
-          child: SimpleScaffold(
-            appBar: MultiSelectAppBarWidget(
-              visible: enableMultiSelect,
-              ctr: currCtr(),
-              child: _buildAppBar,
-            ),
-            body: Padding(
-              padding: .only(left: padding.left, right: padding.right),
-              child: Obx(() {
-                final tabs = _historyController.tabs;
-                if (tabs.isEmpty) {
-                  return child;
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ?_buildPauseTip,
-                    TabBar(
-                      controller: _historyController.tabController,
-                      onTap: (index) {
-                        if (!_historyController
-                            .tabController!
-                            .indexIsChanging) {
-                          currCtr().scrollController.animToTop();
-                        } else {
-                          if (enableMultiSelect) {
-                            currCtr(
-                              _historyController.tabController!.previousIndex,
-                            ).handleSelect();
-                          }
+    return Obx(() {
+      final enableMultiSelect =
+          _historyController.baseCtr.enableMultiSelect.value;
+      return popScope(
+        canPop: !enableMultiSelect,
+        onPopInvokedWithResult: (didPop, result) {
+          if (enableMultiSelect) {
+            currCtr().handleSelect();
+          }
+        },
+        child: SimpleScaffold(
+          appBar: MultiSelectAppBarWidget(
+            visible: enableMultiSelect,
+            ctr: currCtr(),
+            child: _buildAppBar,
+          ),
+          body: Padding(
+            padding: .only(left: padding.left, right: padding.right),
+            child: Obx(() {
+              final tabs = _historyController.tabs;
+              if (tabs.isEmpty) {
+                return child;
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ?_buildPauseTip,
+                  TabBar(
+                    controller: _historyController.tabController,
+                    onTap: (index) {
+                      if (!_historyController.tabController!.indexIsChanging) {
+                        currCtr().scrollController.animToTop();
+                      } else {
+                        if (enableMultiSelect) {
+                          currCtr(
+                            _historyController.tabController!.previousIndex,
+                          ).handleSelect();
                         }
-                      },
-                      tabs: [
-                        const Tab(text: '全部'),
-                        ...tabs.map((item) => Tab(text: item.name)),
+                      }
+                    },
+                    tabs: [
+                      const Tab(text: '全部'),
+                      ...tabs.map((item) => Tab(text: item.name)),
+                    ],
+                  ),
+                  Expanded(
+                    child: RailTabBarView(
+                      physics: enableMultiSelect
+                          ? const NeverScrollableScrollPhysics()
+                          : tabBarScrollPhysics,
+                      controller: _historyController.tabController,
+                      horizontalDragGestureRecognizer:
+                          CustomHorizontalDragGestureRecognizer.new,
+                      children: [
+                        KeepAliveWrapper(child: child),
+                        ...tabs.map((item) => HistoryPage(type: item.type)),
                       ],
                     ),
-                    Expanded(
-                      child: RailTabBarView(
-                        physics: enableMultiSelect
-                            ? const NeverScrollableScrollPhysics()
-                            : tabBarScrollPhysics,
-                        controller: _historyController.tabController,
-                        horizontalDragGestureRecognizer:
-                            CustomHorizontalDragGestureRecognizer.new,
-                        children: [
-                          KeepAliveWrapper(child: child),
-                          ...tabs.map(
-                            (item) => HistoryPage(type: item.type),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              }),
-            ),
+                  ),
+                ],
+              );
+            }),
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
   }
 
   AppBar get _buildAppBar => AppBar(
@@ -178,23 +169,20 @@ class _HistoryPageState extends State<HistoryPage>
             ),
           ),
           PopupMenuItem(
-            onTap: () => _historyController.baseCtr.onClearHistory(
-              context,
-              () {
-                _historyController.loadingState.value = const Success(null);
-                if (_historyController.tabController != null) {
-                  for (final item in _historyController.tabs) {
-                    try {
-                      Get.find<HistoryController>(
-                        tag: item.type,
-                      ).loadingState.value = const Success(
-                        null,
-                      );
-                    } catch (_) {}
-                  }
+            onTap: () => _historyController.baseCtr.onClearHistory(context, () {
+              _historyController.loadingState.value = const Success(null);
+              if (_historyController.tabController != null) {
+                for (final item in _historyController.tabs) {
+                  try {
+                    Get.find<HistoryController>(tag: item.type)
+                        .loadingState
+                        .value = const Success(
+                      null,
+                    );
+                  } catch (_) {}
                 }
-              },
-            ),
+              }
+            }),
             child: const Text('清空观看记录'),
           ),
           PopupMenuItem(

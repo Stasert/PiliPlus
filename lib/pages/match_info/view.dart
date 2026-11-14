@@ -54,10 +54,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
             ),
           ),
         ).constraintWidth(),
-        fab: CommentFabTransition(
-          position: fabAnimation,
-          child: fabButton,
-        ),
+        fab: CommentFabTransition(position: fabAnimation, child: fabButton),
       ),
     );
   }

@@ -107,10 +107,7 @@ class _DynTopicPageState extends State<DynTopicPage>
                             children: allSortBy.map((e) {
                               return Text(
                                 e.sortName!,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  height: 1,
-                                ),
+                                style: const TextStyle(fontSize: 13, height: 1),
                                 strutStyle: const StrutStyle(
                                   height: 1,
                                   leading: 0,
@@ -208,9 +205,8 @@ class _DynTopicPageState extends State<DynTopicPage>
                 margin: const EdgeInsets.only(left: 45, right: 78),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => Get.toNamed(
-                    '/member?mid=${response.topicCreator!.uid}',
-                  ),
+                  onTap: () =>
+                      Get.toNamed('/member?mid=${response.topicCreator!.uid}'),
                   child: Row(
                     spacing: 10,
                     mainAxisSize: MainAxisSize.min,
@@ -228,10 +224,7 @@ class _DynTopicPageState extends State<DynTopicPage>
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Text(
-                        ' 发起',
-                        style: TextStyle(color: colorScheme.outline),
-                      ),
+                      Text(' 发起', style: TextStyle(color: colorScheme.outline)),
                     ],
                   ),
                 ),
@@ -253,10 +246,7 @@ class _DynTopicPageState extends State<DynTopicPage>
                 children: [
                   Text(
                     '${NumUtils.numFormat(response.topicItem!.view)}浏览 · ${NumUtils.numFormat(response.topicItem!.discuss)}讨论',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colorScheme.outline,
-                    ),
+                    style: TextStyle(fontSize: 13, color: colorScheme.outline),
                   ),
                   const Spacer(),
                   OutlinedButton.icon(
@@ -328,9 +318,7 @@ class _DynTopicPageState extends State<DynTopicPage>
               return [
                 PopupMenuItem(
                   onTap: _controller.onFav,
-                  child: Text(
-                    '${_controller.isFav.value ? '取消' : ''}收藏',
-                  ),
+                  child: Text('${_controller.isFav.value ? '取消' : ''}收藏'),
                 ),
                 PopupMenuItem(
                   child: const Text('举报'),

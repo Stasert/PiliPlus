@@ -139,10 +139,7 @@ class _SysMsgPageState extends State<SysMsgPage> {
         }
         return HttpError(onReload: _sysMsgController.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _sysMsgController.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _sysMsgController.onReload);
     }
   }
 
@@ -236,9 +233,7 @@ class _SysMsgPageState extends State<SysMsgPage> {
         return '';
       },
       onNonMatch: (String nonMatchStr) {
-        spanChildren.add(
-          TextSpan(text: nonMatchStr),
-        );
+        spanChildren.add(TextSpan(text: nonMatchStr));
         return '';
       },
     );

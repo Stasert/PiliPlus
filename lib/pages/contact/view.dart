@@ -67,31 +67,36 @@ class _ContactPageState extends State<ContactPage>
           const SizedBox(width: 16),
         ],
       ),
-      body: Column(
-        children: [
-          TabBar(
-            controller: _controller,
-            tabs: const [
-              Tab(text: '我的关注'),
-              Tab(text: '我的粉丝'),
-            ],
-          ),
-          Expanded(
-            child: tabBarView(
+      // The tab bar does not avoid side insets itself. This page is also
+      // pushed with a plain GetPageRoute (share, page_utils), so it cannot
+      // rely on Get.toSafe.
+      body: SideSafeArea(
+        child: Column(
+          children: [
+            TabBar(
               controller: _controller,
-              children: [
-                FollowChildPage(
-                  mid: mid,
-                  onSelect: widget.isFromSelect ? onSelect : null,
-                ),
-                FansPage(
-                  showName: false,
-                  onSelect: widget.isFromSelect ? onSelect : null,
-                ),
+              tabs: const [
+                Tab(text: '我的关注'),
+                Tab(text: '我的粉丝'),
               ],
             ),
-          ),
-        ],
+            Expanded(
+              child: tabBarView(
+                controller: _controller,
+                children: [
+                  FollowChildPage(
+                    mid: mid,
+                    onSelect: widget.isFromSelect ? onSelect : null,
+                  ),
+                  FansPage(
+                    showName: false,
+                    onSelect: widget.isFromSelect ? onSelect : null,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

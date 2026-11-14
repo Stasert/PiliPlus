@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/models_new/history/list.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
+import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
@@ -119,10 +120,7 @@ class HistoryItem extends StatelessWidget {
                       height: 38,
                       child: Row(
                         children: [
-                          const Icon(
-                            MdiIcons.accountCircleOutline,
-                            size: 16,
-                          ),
+                          const Icon(MdiIcons.accountCircleOutline, size: 16),
                           const SizedBox(width: 6),
                           Text(
                             '访问：${item.authorName}',
@@ -188,10 +186,7 @@ class HistoryItem extends StatelessWidget {
               item.showTitle?.isNotEmpty == true)
             Text(
               item.showTitle!,
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.outline,
-              ),
+              style: TextStyle(fontSize: 13, color: theme.colorScheme.outline),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -222,14 +217,10 @@ class HistoryItem extends StatelessWidget {
 Future<void> onPushHistory(HistoryItemModel item) async {
   final business = item.history.business;
   if (business?.contains('article') == true) {
-    PageUtils.toDupNamed(
-      '/articlePage',
-      parameters: {
-        'id': business == 'article-list'
-            ? '${item.history.cid}'
-            : '${item.history.oid}',
-        'type': 'read',
-      },
+    ArticlePage.toArticlePage(
+      id: (business == 'article-list' ? item.history.cid : item.history.oid)
+          .toString(),
+      type: .read,
     );
   } else if (business == 'live') {
     if (item.liveStatus == 1) {
@@ -238,10 +229,7 @@ Future<void> onPushHistory(HistoryItemModel item) async {
       SmartDialog.showToast('直播未开播');
     }
   } else if (business == 'pgc') {
-    PageUtils.viewPgc(
-      epId: item.history.epid,
-      progress: item.playbackProgress,
-    );
+    PageUtils.viewPgc(epId: item.history.epid, progress: item.playbackProgress);
   } else if (business == 'cheese') {
     if (item.uri?.isNotEmpty == true) {
       PageUtils.viewPgcFromUri(

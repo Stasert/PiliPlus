@@ -28,16 +28,24 @@ abstract final class Update {
           extra: {'account': const NoAccount()},
         ),
       );
-      if (res.data is Map || res.data.isEmpty) {
+      final data = res.data;
+      if (data is! Map || data['tag_name'] == null) {
         if (!isAuto) {
           SmartDialog.showToast('检查更新失败，GitHub接口未返回数据，请检查网络');
         }
         return;
       }
-      final data = res.data[0];
       final int latest =
           DateTime.parse(data['created_at']).millisecondsSinceEpoch ~/ 1000;
-      if (BuildConfig.buildTime >= latest) {
+      // 安装包先编译、后发布，Release 的创建时间总晚于编译时间。安装包文件名带
+      // 9 位提交号（见 CLAUDE.md），附件里有本机这个提交号就是同一版
+      const hash = BuildConfig.commitHash;
+      final bool sameBuild =
+          hash.length >= 9 &&
+          ((data['assets'] as List?) ?? const []).any(
+            (e) => (e['name'] as String).contains(hash.substring(0, 9)),
+          );
+      if (sameBuild || BuildConfig.buildTime >= latest) {
         if (!isAuto) {
           SmartDialog.showToast('已是最新版本');
         }
@@ -66,7 +74,7 @@ abstract final class Update {
                       Text('${data['body']}'),
                       TextButton(
                         onPressed: () => PageUtils.launchURL(
-                          '${Constants.sourceCodeUrl}/commits/main',
+                          '${Constants.sourceCodeUrl}/commits/${Constants.sourceCodeBranch}',
                         ),
                         child: Text(
                           "点此查看完整更新(即commit)内容",

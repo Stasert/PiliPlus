@@ -85,9 +85,7 @@ class _IntroDetailState extends State<PgcIntroPanel>
               const SizedBox(width: 2),
             ],
           ),
-          Expanded(
-            child: enableSlide ? slideList() : buildList(),
-          ),
+          Expanded(child: enableSlide ? slideList() : buildList()),
         ],
       ),
     );
@@ -101,10 +99,7 @@ class _IntroDetailState extends State<PgcIntroPanel>
       horizontalDragGestureRecognizer: horizontalDragGestureRecognizer,
       children: [
         KeepAliveWrapper(child: _buildInfo()),
-        PgcReviewPage(
-          name: widget.item.title!,
-          mediaId: widget.item.mediaId,
-        ),
+        PgcReviewPage(name: widget.item.title!, mediaId: widget.item.mediaId),
       ],
     );
   }
@@ -127,18 +122,12 @@ class _IntroDetailState extends State<PgcIntroPanel>
         bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
       ),
       children: [
-        SelectionText(
-          widget.item.title!,
-          style: const TextStyle(fontSize: 16),
-        ),
+        SelectionText(widget.item.title!, style: const TextStyle(fontSize: 16)),
         const SizedBox(height: 4),
         Row(
           spacing: 6,
           children: [
-            StatWidget(
-              type: StatType.play,
-              value: widget.item.stat!.view,
-            ),
+            StatWidget(type: StatType.play, value: widget.item.stat!.view),
             StatWidget(
               type: StatType.danmaku,
               value: widget.item.stat!.danmaku,
@@ -150,43 +139,22 @@ class _IntroDetailState extends State<PgcIntroPanel>
           spacing: 6,
           children: [
             if (widget.item.areas?.isNotEmpty ?? false)
-              Text(
-                widget.item.areas!.first.name!,
-                style: smallTitle,
-              ),
-            Text(
-              widget.item.publish!.pubTimeShow!,
-              style: smallTitle,
-            ),
-            Text(
-              widget.item.newEp!.desc!,
-              style: smallTitle,
-            ),
+              Text(widget.item.areas!.first.name!, style: smallTitle),
+            Text(widget.item.publish!.pubTimeShow!, style: smallTitle),
+            Text(widget.item.newEp!.desc!, style: smallTitle),
           ],
         ),
         if (widget.item.evaluate?.isNotEmpty == true) ...[
           const SizedBox(height: 20),
-          Text(
-            '简介：',
-            style: theme.textTheme.titleMedium,
-          ),
+          Text('简介：', style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
-          SelectionText(
-            widget.item.evaluate!,
-            style: textStyle,
-          ),
+          SelectionText(widget.item.evaluate!, style: textStyle),
         ],
         if (widget.item.actors?.isNotEmpty == true) ...[
           const SizedBox(height: 20),
-          Text(
-            '演职人员：',
-            style: theme.textTheme.titleMedium,
-          ),
+          Text('演职人员：', style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
-          Text(
-            widget.item.actors!,
-            style: textStyle,
-          ),
+          Text(widget.item.actors!, style: textStyle),
         ],
         if (widget.videoTags?.isNotEmpty == true) ...[
           const SizedBox(height: 10),

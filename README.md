@@ -27,6 +27,8 @@
 
 <br/>
 
+> 这是加入 iPhone Duo（折叠屏 iPhone）适配的个人维护版。相对原版新增的功能和修复，见 [功能清单](FEATURES.md)。
+
 ## 适配平台
 
 - [x] Android

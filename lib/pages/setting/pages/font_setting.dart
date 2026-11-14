@@ -163,10 +163,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
             }),
             child: const Text('重置'),
           ),
-          TextButton(
-            onPressed: _saveFontSetting,
-            child: const Text('确定'),
-          ),
+          TextButton(onPressed: _saveFontSetting, child: const Text('确定')),
           const SizedBox(width: 12),
         ],
       ),

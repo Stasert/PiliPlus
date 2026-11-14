@@ -15,9 +15,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class WhisperBlockPage extends StatefulWidget {
-  const WhisperBlockPage({
-    super.key,
-  });
+  const WhisperBlockPage({super.key});
 
   @override
   State<WhisperBlockPage> createState() => _WhisperBlockPageState();
@@ -136,10 +134,7 @@ class _WhisperBlockPageState extends State<WhisperBlockPage> {
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, size: 22),
-                          Text('添加'),
-                        ],
+                        children: [Icon(Icons.add, size: 22), Text('添加')],
                       ),
                     ),
                   ],

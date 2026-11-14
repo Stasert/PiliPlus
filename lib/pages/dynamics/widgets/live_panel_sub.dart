@@ -70,11 +70,7 @@ Widget livePanelSub(
                 ),
               )
             else
-              const PBadge(
-                text: '直播结束',
-                top: 6,
-                right: 6,
-              ),
+              const PBadge(text: '直播结束', top: 6, right: 6),
             if (live.areaName case final areaName?)
               Positioned(
                 left: 0,
@@ -88,10 +84,7 @@ Widget livePanelSub(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: <Color>[
-                        Colors.transparent,
-                        Colors.black45,
-                      ],
+                      colors: <Color>[Colors.transparent, Colors.black45],
                     ),
                     borderRadius: BorderRadius.vertical(
                       bottom: Style.imgRadius,

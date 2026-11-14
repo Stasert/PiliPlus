@@ -145,82 +145,79 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Obx(
-                  () {
-                    final hasTopic = _topic.value != null;
-                    return Row(
-                      spacing: 10,
-                      children: [
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            overlayColor: hasTopic ? Colors.transparent : null,
-                            splashFactory: hasTopic
-                                ? NoSplash.splashFactory
-                                : null,
-                            shape: hasTopic
-                                ? null
-                                : RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      color: hasTopic
-                                          ? Colors.transparent
-                                          : theme.colorScheme.outline
-                                                .withValues(alpha: 0.2),
-                                    ),
-                                    borderRadius: const BorderRadius.all(
-                                      Radius.circular(25),
-                                    ),
+                child: Obx(() {
+                  final hasTopic = _topic.value != null;
+                  return Row(
+                    spacing: 10,
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          overlayColor: hasTopic ? Colors.transparent : null,
+                          splashFactory: hasTopic
+                              ? NoSplash.splashFactory
+                              : null,
+                          shape: hasTopic
+                              ? null
+                              : RoundedRectangleBorder(
+                                  side: BorderSide(
+                                    color: hasTopic
+                                        ? Colors.transparent
+                                        : theme.colorScheme.outline.withValues(
+                                            alpha: 0.2,
+                                          ),
                                   ),
-                            minimumSize: Size.zero,
-                            padding: hasTopic
-                                ? const EdgeInsets.symmetric(vertical: 12)
-                                : const EdgeInsets.all(12),
-                            visualDensity: VisualDensity.compact,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: _onSelectTopic,
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                WidgetSpan(
-                                  alignment: .middle,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(right: 5),
-                                    child: Icon(
-                                      CustomIcons.topic_tag,
-                                      size: 18,
-                                      color: hasTopic
-                                          ? null
-                                          : theme.colorScheme.outline,
-                                    ),
+                                  borderRadius: const BorderRadius.all(
+                                    Radius.circular(25),
                                   ),
                                 ),
-                                TextSpan(
-                                  text: hasTopic
-                                      ? _topic.value!.second
-                                      : '选择话题',
-                                  style: TextStyle(
+                          minimumSize: Size.zero,
+                          padding: hasTopic
+                              ? const EdgeInsets.symmetric(vertical: 12)
+                              : const EdgeInsets.all(12),
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: _onSelectTopic,
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              WidgetSpan(
+                                alignment: .middle,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 5),
+                                  child: Icon(
+                                    CustomIcons.topic_tag,
+                                    size: 18,
                                     color: hasTopic
                                         ? null
                                         : theme.colorScheme.outline,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              TextSpan(
+                                text: hasTopic ? _topic.value!.second : '选择话题',
+                                style: TextStyle(
+                                  color: hasTopic
+                                      ? null
+                                      : theme.colorScheme.outline,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (hasTopic)
-                          iconButton(
-                            size: 22,
-                            iconSize: 16,
-                            icon: const Icon(Icons.clear),
-                            bgColor: theme.colorScheme.onInverseSurface,
-                            iconColor: theme.colorScheme.onSurfaceVariant,
-                            onPressed: () => _topic.value = null,
-                          ),
-                      ],
-                    );
-                  },
-                ),
+                      ),
+                      if (hasTopic)
+                        iconButton(
+                          size: 22,
+                          iconSize: 16,
+                          icon: const Icon(Icons.clear),
+                          bgColor: theme.colorScheme.onInverseSurface,
+                          iconColor: theme.colorScheme.onSurfaceVariant,
+                          onPressed: () => _topic.value = null,
+                        ),
+                    ],
+                  );
+                }),
               ),
               const SizedBox(height: 5),
               Padding(
@@ -417,17 +414,10 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
             const SizedBox(width: 4),
             Text(
               _isPrivate.value ? '仅自己可见' : '所有人可见',
-              style: TextStyle(
-                height: 1,
-                color: color,
-              ),
+              style: TextStyle(height: 1, color: color),
               strutStyle: const StrutStyle(leading: 0, height: 1),
             ),
-            Icon(
-              size: 20,
-              Icons.keyboard_arrow_right,
-              color: color,
-            ),
+            Icon(size: 20, Icons.keyboard_arrow_right, color: color),
           ],
         ),
       ),
@@ -449,10 +439,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    size: 19,
-                    item.iconData,
-                  ),
+                  Icon(size: 19, item.iconData),
                   const SizedBox(width: 4),
                   Text(item.title),
                 ],
@@ -465,25 +452,14 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              size: 19,
-              _replyOption.value.iconData,
-              color: color,
-            ),
+            Icon(size: 19, _replyOption.value.iconData, color: color),
             const SizedBox(width: 4),
             Text(
               _replyOption.value.title,
-              style: TextStyle(
-                height: 1,
-                color: color,
-              ),
+              style: TextStyle(height: 1, color: color),
               strutStyle: const StrutStyle(leading: 0, height: 1),
             ),
-            Icon(
-              size: 20,
-              Icons.keyboard_arrow_right,
-              color: color,
-            ),
+            Icon(size: 20, Icons.keyboard_arrow_right, color: color),
           ],
         ),
       ),
@@ -493,10 +469,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
   Widget get _buildPubTimeWidget => _publishTime.value == null
       ? FilledButton.tonal(
           style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             visualDensity: VisualDensity.compact,
           ),
           onPressed: _isEdit || _isPrivate.value
@@ -552,10 +525,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
         )
       : OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             visualDensity: VisualDensity.compact,
           ),
           onPressed: () => _publishTime.value = null,
@@ -571,10 +541,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
       children: [
         emojiBtn,
         atBtn,
-        if (!_isEdit) ...[
-          voteBtn,
-          moreBtn,
-        ],
+        if (!_isEdit) ...[voteBtn, moreBtn],
         // if (kDebugMode)
         //   ToolbarIconButton(
         //     onPressed: editController.clear,
@@ -615,11 +582,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
                 child: icon,
               ),
             ),
-            Text(
-              title,
-              maxLines: 1,
-              style: const TextStyle(fontSize: 13),
-            ),
+            Text(title, maxLines: 1, style: const TextStyle(fontSize: 13)),
           ],
         ),
       );
@@ -684,10 +647,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
             ..syncRichText(delta)
             ..value = newValue;
         } else {
-          onInsertText(
-            '我发起了一个投票',
-            RichTextType.text,
-          );
+          onInsertText('我发起了一个投票', RichTextType.text);
           onInsertText(
             ' ${voteInfo.title} ',
             RichTextType.vote,
@@ -789,10 +749,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
       final id = response?['dyn_id'];
       RequestUtils.insertCreatedDyn(id);
       if (!_isPrivate.value && _publishTime.value == null) {
-        RequestUtils.checkCreatedDyn(
-          id: id,
-          dynText: editController.rawText,
-        );
+        RequestUtils.checkCreatedDyn(id: id, dynText: editController.rawText);
       }
     } else {
       res.toast();
@@ -815,54 +772,50 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
   void onSave() {}
 
   Widget _buildReserveItem() {
-    return Obx(
-      () {
-        final reserveCard = _reserveCard.value;
-        if (reserveCard == null) {
-          return const SizedBox.shrink();
-        }
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            GestureDetector(
-              onTap: _onReserve,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  color: theme.colorScheme.onInverseSurface,
-                ),
-                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
-                padding: const EdgeInsets.fromLTRB(12, 12, 30, 12),
-                child: Column(
-                  spacing: 3,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text('直播预约: ${reserveCard.title}'),
-                    Text(
-                      '${DateFormatUtils.longFormatD.format(
-                        DateTime.fromMillisecondsSinceEpoch(reserveCard.livePlanStartTime! * 1000),
-                      )} 直播',
-                    ),
-                  ],
-                ),
+    return Obx(() {
+      final reserveCard = _reserveCard.value;
+      if (reserveCard == null) {
+        return const SizedBox.shrink();
+      }
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          GestureDetector(
+            onTap: _onReserve,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+                color: theme.colorScheme.onInverseSurface,
+              ),
+              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+              padding: const EdgeInsets.fromLTRB(12, 12, 30, 12),
+              child: Column(
+                spacing: 3,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('直播预约: ${reserveCard.title}'),
+                  Text(
+                    '${DateFormatUtils.longFormatD.format(DateTime.fromMillisecondsSinceEpoch(reserveCard.livePlanStartTime! * 1000))} 直播',
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              right: 18,
-              top: 2,
-              child: iconButton(
-                size: 30,
-                iconSize: 18,
-                icon: const Icon(Icons.clear),
-                onPressed: () => _reserveCard.value = null,
-                iconColor: theme.colorScheme.onSurfaceVariant,
-              ),
+          ),
+          Positioned(
+            right: 18,
+            top: 2,
+            child: iconButton(
+              size: 30,
+              iconSize: 18,
+              icon: const Icon(Icons.clear),
+              onPressed: () => _reserveCard.value = null,
+              iconColor: theme.colorScheme.onSurfaceVariant,
             ),
-          ],
-        );
-      },
-    );
+          ),
+        ],
+      );
+    });
   }
 
   Future<void> _onReserve() async {

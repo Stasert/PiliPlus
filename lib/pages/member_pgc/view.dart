@@ -11,11 +11,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MemberBangumi extends StatefulWidget {
-  const MemberBangumi({
-    super.key,
-    required this.heroTag,
-    required this.mid,
-  });
+  const MemberBangumi({super.key, required this.heroTag, required this.mid});
 
   final String? heroTag;
   final int mid;
@@ -35,10 +31,7 @@ class _MemberBangumiState extends State<MemberBangumi>
   void initState() {
     super.initState();
     _controller = Get.put(
-      MemberBangumiCtr(
-        heroTag: widget.heroTag,
-        mid: widget.mid,
-      ),
+      MemberBangumiCtr(heroTag: widget.heroTag, mid: widget.mid),
       tag: widget.heroTag,
     );
   }
@@ -59,9 +52,7 @@ class _MemberBangumiState extends State<MemberBangumi>
               top: Style.safeSpace,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
-            sliver: Obx(
-              () => _buildBody(_controller.loadingState.value),
-            ),
+            sliver: Obx(() => _buildBody(_controller.loadingState.value)),
           ),
         ],
       ),

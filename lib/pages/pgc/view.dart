@@ -29,10 +29,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class PgcPage extends StatefulWidget {
-  const PgcPage({
-    super.key,
-    required this.tabType,
-  });
+  const PgcPage({super.key, required this.tabType});
 
   final HomeTabType tabType;
 
@@ -60,6 +57,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
     super.build(context);
     final ThemeData theme = Theme.of(context);
     return refreshIndicator(
+      key: controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: CustomScrollView(
         controller: controller.scrollController,
@@ -104,10 +102,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                       Row(
                         children: [
                           const SizedBox(width: 16),
-                          Text(
-                            '追番时间表',
-                            style: theme.textTheme.titleMedium,
-                          ),
+                          Text('追番时间表', style: theme.textTheme.titleMedium),
                           const SizedBox(width: 16),
                           Expanded(
                             child: TabBar(
@@ -133,27 +128,16 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                               labelColor:
                                   theme.colorScheme.onSecondaryContainer,
                               labelStyle:
-                                  TabBarTheme.of(
-                                    context,
-                                  ).labelStyle?.copyWith(fontSize: 14) ??
+                                  TabBarTheme.of(context).labelStyle
+                                      ?.copyWith(fontSize: 14) ??
                                   const TextStyle(fontSize: 14),
                               dividerColor: Colors.transparent,
-                              tabs: response.map(
-                                (item) {
-                                  return Tab(
-                                    text:
-                                        '${item.date} ${item.isToday == 1 ? '今天' : '周${const [
-                                                '一',
-                                                '二',
-                                                '三',
-                                                '四',
-                                                '五',
-                                                '六',
-                                                '日',
-                                              ][item.dayOfWeek! - 1]}'}',
-                                  );
-                                },
-                              ).toList(),
+                              tabs: response.map((item) {
+                                return Tab(
+                                  text:
+                                      '${item.date} ${item.isToday == 1 ? '今天' : '周${const ['一', '二', '三', '四', '五', '六', '日'][item.dayOfWeek! - 1]}'}',
+                                );
+                              }).toList(),
                             ),
                           ),
                         ],
@@ -201,10 +185,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         alignment: Alignment.center,
-        child: Text(
-          errMsg ?? '',
-          textAlign: TextAlign.center,
-        ),
+        child: Text(errMsg ?? '', textAlign: TextAlign.center),
       ),
     ),
   };
@@ -217,40 +198,24 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
         right: railTrailingSpace(context, Style.safeSpace),
         bottom: 100,
       ),
-      sliver: Obx(
-        () => _buildRcmdBody(controller.loadingState.value),
-      ),
+      sliver: Obx(() => _buildRcmdBody(controller.loadingState.value)),
     ),
   ];
 
   Widget _buildRcmdTitle(ThemeData theme) => SliverToBoxAdapter(
     child: Padding(
-      padding: const EdgeInsets.only(
-        top: 10,
-        bottom: 10,
-        left: 16,
-        right: 10,
-      ),
+      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 16, right: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            '推荐',
-            style: theme.textTheme.titleMedium,
-          ),
+          Text('推荐', style: theme.textTheme.titleMedium),
           moreTextButton(
             padding: const EdgeInsets.symmetric(vertical: 2),
             onTap: () {
               if (widget.tabType == HomeTabType.bangumi) {
                 Get.toSafe(const PgcIndexPage());
               } else {
-                List<String> titles = const [
-                  '全部',
-                  '电影',
-                  '电视剧',
-                  '纪录片',
-                  '综艺',
-                ];
+                List<String> titles = const ['全部', '电影', '电视剧', '纪录片', '综艺'];
                 List<int> types = const [102, 2, 5, 3, 7];
                 Get.toSafe(
                   () => Builder(
@@ -273,9 +238,8 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                                         .toList(),
                                     onTap: (index) {
                                       try {
-                                        if (!DefaultTabController.of(
-                                          context,
-                                        ).indexIsChanging) {
+                                        if (!DefaultTabController.of(context)
+                                            .indexIsChanging) {
                                           Get.find<PgcIndexController>(
                                             tag: types[index].toString(),
                                           ).animateToTop();
@@ -379,10 +343,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
             ..followPage = 1
             ..followEnd = false
             ..queryPgcFollow(),
-          icon: const Icon(
-            Icons.refresh,
-            size: 20,
-          ),
+          icon: const Icon(Icons.refresh, size: 20),
         ),
         Obx(
           () => controller.accountService.isLogin.value
@@ -438,10 +399,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
       Error(:final errMsg) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         alignment: Alignment.center,
-        child: Text(
-          errMsg ?? '',
-          textAlign: TextAlign.center,
-        ),
+        child: Text(errMsg ?? '', textAlign: TextAlign.center),
       ),
     };
   }

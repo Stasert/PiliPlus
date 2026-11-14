@@ -8,10 +8,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SearchActivityItem extends StatelessWidget {
-  const SearchActivityItem({
-    super.key,
-    required this.item,
-  });
+  const SearchActivityItem({super.key, required this.item});
 
   final SearchActivity item;
 
@@ -39,11 +36,7 @@ class SearchActivityItem extends StatelessWidget {
                   Stack(
                     clipBehavior: .none,
                     children: [
-                      NetworkImgLayer(
-                        src: item.cover,
-                        width: 160,
-                        height: 100,
-                      ),
+                      NetworkImgLayer(src: item.cover, width: 160, height: 100),
                       if (item.status == 1)
                         const PBadge(text: '直播', top: 6.0, right: 6.0),
                     ],

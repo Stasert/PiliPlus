@@ -21,6 +21,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/update.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
@@ -65,7 +66,15 @@ class MainController extends GetxController
 
   final enableMYBar = Pref.enableMYBar;
   final floatingNavBar = Pref.floatingNavBar;
-  bool get useSideBar => Pref.useSideBar;
+
+  /// 主导航是否交给系统标签栏（iOS 26 起的 iPhone），这时 Flutter 的底栏和
+  /// 侧边栏都不会出现
+  late final bool nativeTabBarTakesOver =
+      IOSNativeTabBar.isAvailable && navigationBars.length > 1;
+
+  /// 实际是否使用侧边栏。系统标签栏接管导航时侧边栏出不来，开启「改用侧边栏」
+  /// 只会让首页的搜索栏和头像消失，因此忽略这个设置
+  late final bool useSideBar = Pref.useSideBar && !nativeTabBarTakesOver;
   final hideSideBarLabel = Pref.hideSideBarLabel;
   final mainTabBarView = Pref.mainTabBarView;
   late final optTabletNav = Pref.optTabletNav;
@@ -285,10 +294,7 @@ class MainController extends GetxController
     } else {
       Get.toSafe(
         const Material(
-          child: ViewSafeArea(
-            top: true,
-            child: MinePage(showBackBtn: true),
-          ),
+          child: ViewSafeArea(top: true, child: MinePage(showBackBtn: true)),
         ),
       );
     }
@@ -318,8 +324,8 @@ class MainController extends GetxController
           'topOrRefresh',
           const Duration(milliseconds: 500),
           () => switch (currentNav) {
-            .home => homeController.onRefresh(),
-            .dynamics => dynamicController.onRefresh(),
+            .home => homeController.showRefresh(),
+            .dynamics => dynamicController.showRefresh(),
             .mine => null,
           },
         );
@@ -344,7 +350,7 @@ class MainController extends GetxController
     if (navigationBars[selectedIndex.value] == NavigationBarType.home &&
         homeController.tabs[homeController.tabController.index] ==
             HomeTabType.rcmd) {
-      homeController.onRefresh();
+      homeController.showRefresh();
       return true;
     }
     return false;

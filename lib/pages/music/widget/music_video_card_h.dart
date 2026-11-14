@@ -18,10 +18,7 @@ import 'package:material_ui/material_ui.dart';
 class MusicVideoCardH extends StatelessWidget {
   final BgmRecommend videoItem;
 
-  const MusicVideoCardH({
-    super.key,
-    required this.videoItem,
-  });
+  const MusicVideoCardH({super.key, required this.videoItem});
 
   @override
   Widget build(BuildContext context) {
@@ -110,9 +107,7 @@ class MusicVideoCardH extends StatelessWidget {
             child: Text(
               videoItem.title!,
               textAlign: TextAlign.start,
-              style: const TextStyle(
-                letterSpacing: 0.3,
-              ),
+              style: const TextStyle(letterSpacing: 0.3),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -120,14 +115,8 @@ class MusicVideoCardH extends StatelessWidget {
           Row(
             spacing: 8,
             children: [
-              StatWidget(
-                type: StatType.play,
-                value: videoItem.play,
-              ),
-              StatWidget(
-                type: StatType.danmaku,
-                value: videoItem.danmu,
-              ),
+              StatWidget(type: StatType.play, value: videoItem.play),
+              StatWidget(type: StatType.danmaku, value: videoItem.danmu),
             ],
           ),
           const SizedBox(height: 3),

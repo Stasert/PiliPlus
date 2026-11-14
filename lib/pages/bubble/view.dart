@@ -8,6 +8,7 @@ import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/bubble/dyn_list.dart';
+import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/bubble/controller.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
@@ -62,9 +63,7 @@ class _BubblePageState extends State<BubblePage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(bottom: padding.bottom + 100),
-            sliver: Obx(
-              () => _buildBody(_controller.loadingState.value),
-            ),
+            sliver: Obx(() => _buildBody(_controller.loadingState.value)),
           ),
         ],
       ),
@@ -79,54 +78,50 @@ class _BubblePageState extends State<BubblePage>
             right: kFloatingActionButtonMargin,
             bottom: kFloatingActionButtonMargin + padding.bottom,
           ),
-          child: Obx(
-            () {
-              final sortInfo = _controller.sortInfo.value;
-              if (sortInfo == null || sortInfo.showSort != true) {
-                return const SizedBox.shrink();
-              }
-              final item = sortInfo.sortItems?.firstWhereOrNull(
-                (e) => e.sortType == sortInfo.curSortType,
-              );
-              if (item != null) {
-                return FloatingActionButton.extended(
-                  tooltip: '排序',
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (context) => SimpleDialog(
-                      clipBehavior: .hardEdge,
-                      contentPadding: const .symmetric(vertical: 12),
-                      children: sortInfo.sortItems!.map(
-                        (e) {
-                          final isSelected = item.sortType == e.sortType;
-                          return ListTile(
-                            dense: true,
-                            enabled: !isSelected,
-                            onTap: () {
-                              Get.back();
-                              if (!isSelected) {
-                                _controller.onSort(e.sortType);
-                              }
-                            },
-                            title: Text(
-                              e.text!,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            trailing: isSelected
-                                ? const Icon(size: 22, Icons.check)
-                                : null,
-                          );
-                        },
-                      ).toList(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.sort, size: 20),
-                  label: Text(item.text!),
-                );
-              }
+          child: Obx(() {
+            final sortInfo = _controller.sortInfo.value;
+            if (sortInfo == null || sortInfo.showSort != true) {
               return const SizedBox.shrink();
-            },
-          ),
+            }
+            final item = sortInfo.sortItems?.firstWhereOrNull(
+              (e) => e.sortType == sortInfo.curSortType,
+            );
+            if (item != null) {
+              return FloatingActionButton.extended(
+                tooltip: '排序',
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => SimpleDialog(
+                    clipBehavior: .hardEdge,
+                    contentPadding: const .symmetric(vertical: 12),
+                    children: sortInfo.sortItems!.map((e) {
+                      final isSelected = item.sortType == e.sortType;
+                      return ListTile(
+                        dense: true,
+                        enabled: !isSelected,
+                        onTap: () {
+                          Get.back();
+                          if (!isSelected) {
+                            _controller.onSort(e.sortType);
+                          }
+                        },
+                        title: Text(
+                          e.text!,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(size: 22, Icons.check)
+                            : null,
+                      );
+                    }).toList(),
+                  ),
+                ),
+                icon: const Icon(Icons.sort, size: 20),
+                label: Text(item.text!),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ),
       );
     }
@@ -204,18 +199,9 @@ class _BubblePageState extends State<BubblePage>
                   safeArea: false,
                   visualDensity: .standard,
                   // PageUtils.pushDynFromId(id: item.dynId);
-                  onTap: () => Get.toNamed(
-                    '/articlePage',
-                    parameters: {
-                      'id': item.dynId!,
-                      'type': 'opus',
-                    },
-                  ),
-                  title: Text(
-                    item.title!,
-                    maxLines: 1,
-                    overflow: .ellipsis,
-                  ),
+                  onTap: () =>
+                      ArticlePage.toArticlePage(id: item.dynId!, type: .opus),
+                  title: Text(item.title!, maxLines: 1, overflow: .ellipsis),
                   trailing: item.meta?.timeText == null
                       ? null
                       : Text(
@@ -230,10 +216,7 @@ class _BubblePageState extends State<BubblePage>
         }
         return HttpError(onReload: _controller.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 

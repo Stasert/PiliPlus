@@ -4,7 +4,9 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/sub/sub/list.dart';
+import 'package:PiliPlus/models_new/sub/sub_detail/data.dart';
 import 'package:PiliPlus/models_new/sub/sub_detail/media.dart';
+import 'package:PiliPlus/pages/common/page_order/page_order_btn_mixin.dart';
 import 'package:PiliPlus/pages/subscription_detail/controller.dart';
 import 'package:PiliPlus/pages/subscription_detail/widget/sub_video_card.dart';
 import 'package:PiliPlus/utils/grid.dart';
@@ -26,22 +28,22 @@ class SubDetailPage extends StatefulWidget {
   }) {
     return Get.toNamed(
       '/subDetail',
-      arguments: {
-        'id': id,
-        'subInfo': subInfo,
-        'heroTag': heroTag,
-      },
+      arguments: {'id': id, 'subInfo': subInfo, 'heroTag': heroTag},
     );
   }
 }
 
-class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
-  late final SubDetailController _subDetailController;
+class _SubDetailPageState extends State<SubDetailPage>
+    with
+        GridMixin,
+        PageOrderBtnMixin<SubDetailPage, SubDetailData, SubDetailItemModel> {
+  @override
+  late final SubDetailController controller;
 
   @override
   void initState() {
     super.initState();
-    _subDetailController = Get.put(
+    controller = Get.put(
       SubDetailController(),
       tag: Utils.makeHeroTag(Get.parameters['id']),
     );
@@ -54,9 +56,9 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
     return Material(
       color: theme.colorScheme.surface,
       child: refreshIndicator(
-        onRefresh: _subDetailController.onRefresh,
+        onRefresh: controller.onRefresh,
         child: CustomScrollView(
-          controller: _subDetailController.scrollController,
+          controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             _appBar(theme, padding),
@@ -67,9 +69,7 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
                 right: padding.right,
                 bottom: padding.bottom + 100,
               ),
-              sliver: Obx(
-                () => _buildBody(_subDetailController.loadingState.value),
-              ),
+              sliver: Obx(() => _buildBody(controller.loadingState.value)),
             ),
           ],
         ),
@@ -86,35 +86,29 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
                 gridDelegate: gridDelegate,
                 itemBuilder: (context, index) {
                   if (index == response.length - 1) {
-                    _subDetailController.onLoadMore();
+                    controller.onLoadMore();
                   }
-                  return SubVideoCardH(
-                    videoItem: response[index],
-                  );
+                  return SubVideoCardH(videoItem: response[index]);
                 },
                 itemCount: response.length,
               )
-            : HttpError(onReload: _subDetailController.onReload),
+            : HttpError(onReload: controller.onReload),
       Error(:final errMsg) => HttpError(
         errMsg: errMsg,
-        onReload: _subDetailController.onReload,
+        onReload: controller.onReload,
       ),
     };
   }
 
   Widget _appBar(ThemeData theme, EdgeInsets padding) {
-    final info = _subDetailController.subInfo;
+    final info = controller.subInfo;
     if (info != null) return _buildAppBar(theme, padding, info);
     return Obx(() {
-      return switch (_subDetailController.loadingState.value) {
+      return switch (controller.loadingState.value) {
         Loading() || Error() => SliverAppBar(
           automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
         ),
-        Success() => _buildAppBar(
-          theme,
-          padding,
-          _subDetailController.subInfo!,
-        ),
+        Success() => _buildAppBar(theme, padding, controller.subInfo!),
       };
     });
   }
@@ -125,19 +119,11 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
       fontSize: 12.5,
       color: theme.colorScheme.outline,
     );
-    Widget cover = NetworkImgLayer(
-      width: 176,
-      height: 110,
-      src: info.cover,
-    );
-    if (_subDetailController.heroTag != null) {
-      cover = Hero(
-        tag: _subDetailController.heroTag!,
-        child: cover,
-      );
+    Widget cover = NetworkImgLayer(width: 176, height: 110, src: info.cover);
+    if (controller.heroTag != null) {
+      cover = Hero(tag: controller.heroTag!, child: cover);
     }
     return SliverAppBar.medium(
-      automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
       expandedHeight: kToolbarHeight + 132,
       pinned: true,
       title: Column(
@@ -149,10 +135,7 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.titleMedium,
           ),
-          Text(
-            '共${info.mediaCount}条视频',
-            style: theme.textTheme.labelMedium,
-          ),
+          Text('共${info.mediaCount}条视频', style: theme.textTheme.labelMedium),
         ],
       ),
       flexibleSpace: FlexibleSpaceBar(
@@ -212,6 +195,7 @@ class _SubDetailPageState extends State<SubDetailPage> with GridMixin {
           ),
         ),
       ),
+      actions: [pageOrderBtn, const SizedBox(width: 10)],
     );
   }
 }

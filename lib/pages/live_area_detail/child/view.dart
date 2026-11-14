@@ -158,10 +158,7 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
           sliver: child,
         );
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _controller.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _controller.onReload);
     }
   }
 

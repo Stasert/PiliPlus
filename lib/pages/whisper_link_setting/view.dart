@@ -12,10 +12,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class WhisperLinkSettingPage extends StatefulWidget {
-  const WhisperLinkSettingPage({
-    super.key,
-    required this.talkerUid,
-  });
+  const WhisperLinkSettingPage({super.key, required this.talkerUid});
 
   final int talkerUid;
 
@@ -70,14 +67,12 @@ class _WhisperLinkSettingPageState extends State<WhisperLinkSettingPage> {
               _controller.sessionSs.value,
             ),
           ),
-          Obx(
-            () {
-              if (_controller.sessionSs.value case Success(:final response)) {
-                return _buildBlockItem(response.followStatus == 128);
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          Obx(() {
+            if (_controller.sessionSs.value case Success(:final response)) {
+              return _buildBlockItem(response.followStatus == 128);
+            }
+            return const SizedBox.shrink();
+          }),
           divider2,
           ListTile(
             dense: true,
@@ -268,10 +263,7 @@ class _WhisperLinkSettingPageState extends State<WhisperLinkSettingPage> {
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Text(
-          errMsg ?? '',
-          textAlign: TextAlign.center,
-        ),
+        child: Text(errMsg ?? '', textAlign: TextAlign.center),
       ),
     );
   }

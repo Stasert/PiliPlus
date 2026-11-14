@@ -26,10 +26,7 @@ const _kRadius = Radius.circular(6);
 const _kBorderRadius = BorderRadius.all(_kRadius);
 
 class SearchAllUserItem extends StatelessWidget {
-  const SearchAllUserItem({
-    super.key,
-    required this.item,
-  });
+  const SearchAllUserItem({super.key, required this.item});
 
   final SearchUser item;
 

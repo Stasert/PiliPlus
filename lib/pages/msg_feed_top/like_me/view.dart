@@ -137,10 +137,7 @@ class _LikeMePageState extends State<LikeMePage> {
           },
         );
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _likeMeController.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _likeMeController.onReload);
     }
   }
 

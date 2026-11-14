@@ -139,7 +139,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
   }
 
   String? _countLabel(int? value) =>
-      value == null || value < 0 ? null : NumUtils.numFormat(value);
+      value == null || value < 0 ? null : NumUtils.compactCount(value);
 
   void _publishNativeActions() {
     final stat = controller.dynItem.modules.moduleStat;
@@ -154,6 +154,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
             title: '点赞',
             count: _countLabel(stat?.like?.count),
             selected: stat?.like?.status ?? false,
+            selectedColor: Theme.of(context).colorScheme.primary.toARGB32(),
           ),
           NativePageAction(
             id: 'comment',
@@ -351,10 +352,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
                   start: buffer.length,
                   end: buffer.length + Style.placeHolder.length,
                 ),
-                emote: Emote(
-                  url: e.emoji!.url!,
-                  width: 22,
-                ),
+                emote: Emote(url: e.emoji!.url!, width: 22),
               ),
             );
             buffer.write(Style.placeHolder);
@@ -386,10 +384,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
               range: range,
               id: e.rid,
             ),
-            _ => RichTextItem(
-              text: e.origText!,
-              range: range,
-            ),
+            _ => RichTextItem(text: e.origText!, range: range),
           };
           items.add(item);
           buffer.write(e.origText!);
@@ -413,9 +408,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
     } else {
       final text = desc?.text ?? opus?.summary?.text;
       if (text != null && text.isNotEmpty) {
-        items = [
-          RichTextItem.fromStart(text),
-        ];
+        items = [RichTextItem.fromStart(text)];
       }
     }
     ReplyOptionType? replyOption;
@@ -432,24 +425,18 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
       topic: topic,
       replyOption: replyOption ?? .allow,
       isPrivate: item.modules.moduleAuthor?.badgeText != null,
-      editConfig: (
-        dynId: item.idStr,
-        repostDynId: item.orig?.idStr,
-      ),
+      editConfig: (dynId: item.idStr, repostDynId: item.orig?.idStr),
       onSuccess: () {
-        Timer(
-          const Duration(milliseconds: 500),
-          () async {
-            if (!mounted) return;
-            final res = await DynamicsHttp.dynamicDetail(id: item.idStr);
-            if (res case Success(:final response)) {
-              if (mounted) {
-                controller.dynItem = response;
-                setState(() {});
-              }
+        Timer(const Duration(milliseconds: 500), () async {
+          if (!mounted) return;
+          final res = await DynamicsHttp.dynamicDetail(id: item.idStr);
+          if (res case Success(:final response)) {
+            if (mounted) {
+              controller.dynItem = response;
+              setState(() {});
             }
-          },
-        );
+          }
+        });
       },
     );
   }
@@ -458,25 +445,23 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
     automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
     title: Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: Obx(
-        () {
-          final showTitle = controller.showTitle.value;
-          return AnimatedOpacity(
-            opacity: showTitle ? 1 : 0,
-            duration: const Duration(milliseconds: 300),
-            child: IgnorePointer(
-              ignoring: !showTitle,
-              child: AuthorPanel(
-                item: controller.dynItem,
-                isDetail: true,
-                onSetPubSetting: controller.onSetPubSetting,
-                onEdit: _onEdit,
-                onSetReplySubject: controller.onSetReplySubject,
-              ),
+      child: Obx(() {
+        final showTitle = controller.showTitle.value;
+        return AnimatedOpacity(
+          opacity: showTitle ? 1 : 0,
+          duration: const Duration(milliseconds: 300),
+          child: IgnorePointer(
+            ignoring: !showTitle,
+            child: AuthorPanel(
+              item: controller.dynItem,
+              isDetail: true,
+              onSetPubSetting: controller.onSetPubSetting,
+              onEdit: _onEdit,
+              onSetReplySubject: controller.onSetReplySubject,
             ),
-          );
-        },
-      ),
+          ),
+        );
+      }),
     ),
     actions: isPortrait
         ? null
@@ -586,9 +571,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
             left: 0,
             right: 0,
             top: displacement,
-            child: Obx(
-              () => RefreshIndicator_(isRefreshing: _isRefreshing.value),
-            ),
+            child: RefreshIndicator_(isRefreshing: _isRefreshing),
           ),
         ],
       );
@@ -852,26 +835,24 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
     final secondary = theme.colorScheme.secondary;
     final child = Padding(
       padding: const .fromLTRB(12, 2.5, 6, 2.5),
-      child: Obx(
-        () {
-          final sortType = controller.sortType.value;
-          return Row(
-            mainAxisAlignment: .spaceBetween,
-            children: [
-              Text(sortType.desc),
-              TextButton.icon(
-                style: Style.buttonStyle,
-                onPressed: controller.queryBySort,
-                icon: Icon(Icons.sort, size: 16, color: secondary),
-                label: Text(
-                  sortType.descShort,
-                  style: TextStyle(fontSize: 13, color: secondary),
-                ),
+      child: Obx(() {
+        final sortType = controller.sortType.value;
+        return Row(
+          mainAxisAlignment: .spaceBetween,
+          children: [
+            Text(sortType.desc),
+            TextButton.icon(
+              style: Style.buttonStyle,
+              onPressed: controller.queryBySort,
+              icon: Icon(Icons.sort, size: 16, color: secondary),
+              label: Text(
+                sortType.descShort,
+                style: TextStyle(fontSize: 13, color: secondary),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      }),
     );
     return SliverFloatingHeaderWidget(
       backgroundColor: theme.colorScheme.surface,

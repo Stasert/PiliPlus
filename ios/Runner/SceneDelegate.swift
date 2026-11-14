@@ -28,13 +28,10 @@ class SceneDelegate: FlutterSceneDelegate {
       let flutterViewController = window.rootViewController as? FlutterViewController
     {
       let tabs = NativeTabBarController(flutterViewController: flutterViewController)
-      (flutterViewController as? DuoFlutterViewController)?.onFoldOrientationApplied = { [weak tabs] needsSync in
-        tabs?.publishFoldOrientationChange(needsFlutterSync: needsSync)
-      }
-      (flutterViewController as? DuoFlutterViewController)?.onPlayerOrientationRequest = { [weak tabs] request in
-        tabs?.publishPlayerOrientationRequest(request)
-      }
       let navigation = NativePageNavigationController(rootViewController: tabs)
+      navigation.onInteractionBlockChanged = { [weak tabs] blocked in
+        tabs?.setInteractionBlocked(blocked)
+      }
       navigation.onBack = { [weak tabs] completion in
         tabs?.requestBack(completion: completion)
       }
@@ -51,7 +48,6 @@ class SceneDelegate: FlutterSceneDelegate {
         tabs?.publishBarVisibility(back: back, actions: actions, video: video, home: home)
       }
       window.rootViewController = navigation
-      (flutterViewController as? DuoFlutterViewController)?.observeHinge(in: navigation.view)
     }
   }
 }
@@ -88,8 +84,14 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
   private var requestedTabBarHidden = true
   private var appliedTabBarHidden = true
   private var videoChrome: [String: Any]?
+  private var interactionBlocked = false
+  func setInteractionBlocked(_ blocked: Bool) {
+    interactionBlocked = blocked
+    updateTabBarVisibility(animated: false)
+  }
   var isInnerDisplay: Bool {
-    (flutterViewController as? DuoFlutterViewController)?.isInnerDirectionDisplay ?? false
+    guard let screen = view.window?.windowScene?.screen else { return false }
+    return min(screen.bounds.width, screen.bounds.height) >= 600
   }
   private var navigationHost: NativePageNavigationController? {
     navigationController as? NativePageNavigationController
@@ -102,22 +104,14 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
   private func updateTabBarVisibility(animated: Bool) {
     // Secondary routes keep their commands, but not the three root tabs.
     let hidden = isPlayerFullScreen || (videoChrome?["fullScreen"] as? Bool ?? false) || !tabsConfigured
-      || canGoBack || requestedTabBarHidden
-    guard hidden != appliedTabBarHidden else { return }
+      || canGoBack || requestedTabBarHidden || interactionBlocked
+    guard hidden != appliedTabBarHidden || isTabBarHidden != hidden else { return }
     appliedTabBarHidden = hidden
     setTabBarHidden(hidden, animated: animated)
   }
 
   func requestBack(completion: @escaping () -> Void) {
     channel?.invokeMethod("back", arguments: nil) { _ in completion() }
-  }
-
-  func publishFoldOrientationChange(needsFlutterSync: Bool) {
-    channel?.invokeMethod("foldOrientationChanged", arguments: needsFlutterSync)
-  }
-
-  func publishPlayerOrientationRequest(_ request: [String: Any]) {
-    channel?.invokeMethod("playerOrientationRequest", arguments: request)
   }
 
   func requestPageAction(owner: Int, id: String, completion: @escaping () -> Void) {
@@ -143,8 +137,12 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
 
   private func makeHost() -> FlutterHostViewController {
     let host = FlutterHostViewController()
-    host.onSafeAreaChange = { [weak self] insets in
-      guard let self, insets != self.safeArea else { return }
+    host.onSafeAreaChange = { [weak self, weak host] insets in
+      guard let self else { return }
+      var insets = insets
+      if let window = host?.view.window { insets.top = min(insets.top, window.safeAreaInsets.top) }
+      if max(insets.left, insets.right) >= 72 { insets.top = 0 }
+      guard insets != self.safeArea else { return }
       self.safeArea = insets
       self.updateBackButton()
       self.channel?.invokeMethod("safeArea", arguments: Self.encode(insets))
@@ -168,10 +166,14 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
       navigationHost?.performNavigationUpdates {
         if let page = state["page"] as? [String: Any] {
           videoChrome = page["video"] as? [String: Any]
+          if videoChrome == nil && isPlayerFullScreen { isPlayerFullScreen = false; updateBackButton() }
           canGoBack = page["canGoBack"] as? Bool ?? canGoBack
           navigationHost?.setPageActions(owner: page["owner"] as? Int ?? 0,
             items: page["items"] as? [[String: Any]] ?? [], video: videoChrome,
             homeTools: page["homeTools"] as? Bool ?? false, canGoBack: canGoBack)
+        }
+        if let presentation = state["presentation"] as? [String: Any] {
+          navigationHost?.setModalOverlayVisible(presentation["modal"] as? Bool ?? false)
         }
         if let comment = state["comment"] as? [String: Any] {
           navigationHost?.setCommentAction(owner: comment["owner"] as? Int ?? 0,
@@ -202,36 +204,10 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
       updateBackButton()
       updateTabBarVisibility(animated: true)
       result(nil)
-    case "getFoldOrientationDiagnostics":
-      result((flutterViewController as? DuoFlutterViewController)?.foldOrientationDiagnostics() ?? [])
-    case "beginPlayerOrientation":
-      result((flutterViewController as? DuoFlutterViewController)?
-        .beginAutomaticPlayerOrientation(vertical: call.arguments as? Bool ?? false) ?? false)
-    case "isPlayerOrientationRequestCurrent":
-      result((flutterViewController as? DuoFlutterViewController)?
-        .isPlayerOrientationRequestCurrent(call.arguments as? Int ?? -1) ?? false)
-    case "completePlayerOrientationRequest":
-      let args = call.arguments as? [String: Any] ?? [:]
-      DispatchQueue.main.async { [weak self] in
-        (self?.flutterViewController as? DuoFlutterViewController)?
-          .completePlayerOrientationRequest(args["id"] as? Int ?? -1,
-            success: args["success"] as? Bool ?? false)
-        result(nil)
-      }
-    case "applyFoldableOrientation":
-      // Flutter queues its orientationPreferences update on this same queue.
-      // Clear the scene only after that update, including its geometry request.
-      DispatchQueue.main.async { [weak self] in
-        let handled = (self?.flutterViewController as? DuoFlutterViewController)?
-          .configureAutomaticOrientation(call.arguments as? Bool ?? true) ?? false
-        result(handled)
-      }
     case "setFullScreen":
       isPlayerFullScreen = call.arguments as? Bool ?? false
-      (flutterViewController as? DuoFlutterViewController)?
-        .setPlayerFullScreen(isPlayerFullScreen)
       updateBackButton()
-      verticalBarDidChange()
+      verticalBarDidChange(forceStatusUpdate: true)
       result(nil)
     case "getNavigationCapabilities":
       result(["verticalRail": hasVerticalBar, "commentActions": true])
@@ -324,10 +300,13 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
   }
   private var sentVerticalBarHidden = false
 
-  private func verticalBarDidChange() {
+  private func verticalBarDidChange(forceStatusUpdate: Bool = false) {
     updateTabBarVisibility(animated: true)
     let hidden = isVerticalBarHidden
-    guard hidden != sentVerticalBarHidden else { return }
+    guard hidden != sentVerticalBarHidden else {
+      if forceStatusUpdate { setNeedsStatusBarAppearanceUpdate() }
+      return
+    }
     sentVerticalBarHidden = hidden
     UIView.animate(withDuration: 0.25) { self.setNeedsStatusBarAppearanceUpdate() }
     channel?.invokeMethod("verticalBarHidden", arguments: hidden)
@@ -352,9 +331,6 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
         hasVerticalBar = traitCollection.verticalBarEdge != .unspecified
       }
     #endif
-    if hasVerticalBar {
-      (flutterViewController as? DuoFlutterViewController)?.recognizeFoldableDisplay()
-    }
     if hasVerticalBar != self.hasVerticalBar {
       self.hasVerticalBar = hasVerticalBar
       channel?.invokeMethod("rightRailDevice", arguments: hasVerticalBar)
@@ -380,6 +356,8 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
 
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    updateBackButton()
+    verticalBarDidChange(forceStatusUpdate: true)
     if hasFlutterAppeared {
       flutterViewController.endAppearanceTransition()
     } else {
@@ -464,446 +442,51 @@ struct DuoStatusBarPolicy {
   }
 }
 
-/// A missing/unknown hinge update means the hierarchy is moving, not closing.
-/// Keep the last authoritative posture until another valid update arrives.
-struct DuoOrientationPolicy {
-  var automatic = true
-  var playerFullScreen = false
-  private(set) var foldableDisplayRecognized = false
-  private(set) var isHingeOpen: Bool?
-
-  @discardableResult
-  mutating func recognizeFoldableDisplay() -> Bool {
-    guard !foldableDisplayRecognized else { return false }
-    foldableDisplayRecognized = true
-    return true
-  }
-
-  @discardableResult
-  mutating func updateHinge(isOpen: Bool?) -> Bool {
-    guard let isOpen else { return false }
-    recognizeFoldableDisplay()
-    guard isOpen != isHingeOpen else { return false }
-    isHingeOpen = isOpen
-    return true
-  }
-
-  var handlesAutomaticOrientation: Bool { automatic && foldableDisplayRecognized }
-  var geometryMask: UIInterfaceOrientationMask? {
-    guard handlesAutomaticOrientation, !playerFullScreen else { return nil }
-    // Empty means no scene orientation preference. .all still expresses a
-    // preference; portrait on the outer display can carry into inner migration.
-    return []
-  }
-  var releasesPortraitLock: Bool {
-    handlesAutomaticOrientation && !playerFullScreen
-  }
-}
-
-/// UIKit's interface orientation is display-relative. The inner display's
-/// upright baseline is one quarter turn from the outer display. Learn a normal
-/// scene's baseline when available; retain the Duo baseline for first opening.
-struct DuoDisplayDirections {
-  private var offsets = [Bool: Int]()
-  private let cycle: [UIInterfaceOrientation] = [.portrait, .landscapeLeft, .portraitUpsideDown, .landscapeRight]
-
-  mutating func observe(inner: Bool, device: UIDeviceOrientation, interface: UIInterfaceOrientation) {
-    guard offsets[inner] == nil,
-      let physical = cycle.firstIndex(where: { $0.rawValue == device.rawValue }),
-      let displayed = cycle.firstIndex(of: interface) else { return }
-    offsets[inner] = (displayed - physical + 4) % 4
-  }
-
-  func upright(inner: Bool, device: UIDeviceOrientation) -> UIInterfaceOrientation {
-    let physical = cycle.firstIndex(where: { $0.rawValue == device.rawValue }) ?? 0
-    return cycle[(physical + (offsets[inner] ?? (inner ? 1 : 0))) % 4]
-  }
-}
-
+// UIKit picks the inner display's orientation from the lock in effect before
+// the device unfolds, so a portrait-only lock leaves the interface in the inner
+// display's native orientation, rotated relative to the device. Release the
+// lock as soon as the hinge leaves the closed state, before the scene moves to
+// the inner display. Dart restores it after the device closes again.
 class DuoFlutterViewController: FlutterViewController {
-  var onFoldOrientationApplied: ((Bool) -> Void)?
-  var onPlayerOrientationRequest: (([String: Any]) -> Void)?
-  private var foldPolicy = DuoOrientationPolicy()
-  private var lastRequestedMask: UIInterfaceOrientationMask?
-  private weak var orientationScene: UIWindowScene?
-  private weak var orientationScreen: UIScreen?
-  private var orientationTrace = [[String: Any]]()
-  private var lastLayoutGeometry = ""
-  private var hingeInteraction: UIInteraction?
-  private enum DirectionPhase { case restore, hold, release, prepareMigration }
-  private struct DirectionRequest {
-    let id: Int
-    let target: UIInterfaceOrientation?
-    let phase: DirectionPhase
-    var acknowledged = false
-  }
-  private var directions = DuoDisplayDirections()
-  private var managedFullScreenVertical: Bool?
-  private var recoveryEnabled = false
-  private var directionGeneration = 0
-  private var directionRequest: DirectionRequest?
-  private var expectedInnerDisplay: Bool?
-  private var migrationPrepared = false
-  private weak var currentDirectionScreen: UIScreen?
-  private var transitioning = false
-  private var directionFailed = false
-  private var deviceObserver: NSObjectProtocol?
-  private var lastPhysicalOrientation = UIDeviceOrientation.portrait
+  private var isHingeOpen = false
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    observeHinge(in: view)
-    UIDevice.current.beginGeneratingDeviceOrientationNotifications()
-    deviceObserver = NotificationCenter.default.addObserver(
-      forName: UIDevice.orientationDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-        self?.applyHingeOrientation(force: true)
-      }
-  }
-
-  override func viewDidAppear(_ animated: Bool) {
-    super.viewDidAppear(animated)
-    applyHingeOrientation()
-  }
-
-  deinit {
-    if let deviceObserver { NotificationCenter.default.removeObserver(deviceObserver) }
-  }
-
-  override func viewWillTransition(to size: CGSize,
-    with coordinator: UIViewControllerTransitionCoordinator) {
-    recordOrientation("transition.begin")
-    transitioning = true
-    applyHingeOrientation()
-    super.viewWillTransition(to: size, with: coordinator)
-    coordinator.animate(alongsideTransition: nil) { [weak self] _ in
-      self?.recordOrientation("transition.end")
-      self?.transitioning = false
-      self?.observeNormalDirection()
-      self?.advanceDirectionRequest()
-      self?.applyHingeOrientation()
-    }
-  }
-
-  /// Move the same observer to the stable navigation root once Flutter is
-  /// embedded in tab hosts. Tab changes must not detach the hinge observer.
-  func observeHinge(in host: UIView) {
+    // UIHinge ships in the iOS 27.1 SDK (Xcode 27, Swift 6.4); older Xcode
+    // versions build without hinge handling.
     #if compiler(>=6.4)
       if #available(iOS 27.1, *) {
-        if hingeInteraction == nil {
-          hingeInteraction = UIHingeInteraction { [weak self] _, update in
-            self?.hingeDidUpdate(update.hinge)
-          }
+        let interaction = UIHingeInteraction { [weak self] _, update in
+          self?.hingeDidUpdate(update.hinge)
         }
-        guard let interaction = hingeInteraction, interaction.view !== host else { return }
-        interaction.view?.removeInteraction(interaction)
-        host.addInteraction(interaction)
+        view.addInteraction(interaction)
       }
     #endif
-  }
-
-  func recognizeFoldableDisplay() {
-    guard foldPolicy.recognizeFoldableDisplay() else { return }
-    recordOrientation("device.recognized")
-    applyHingeOrientation(force: true)
-  }
-
-  func configureAutomaticOrientation(_ automatic: Bool) -> Bool {
-    if foldPolicy.automatic != automatic {
-      foldPolicy.automatic = automatic
-      lastRequestedMask = nil
-      invalidateDirectionRequest()
-      if #available(iOS 16.0, *) { setNeedsUpdateOfSupportedInterfaceOrientations() }
-    }
-    recordOrientation("automatic.configured")
-    // A previous asynchronous Flutter orientation request may have replaced
-    // the scene preference after our last clear; an explicit apply must retry.
-    applyHingeOrientation(force: true)
-    return foldPolicy.handlesAutomaticOrientation
-  }
-
-  func setPlayerFullScreen(_ fullScreen: Bool) {
-    guard foldPolicy.playerFullScreen != fullScreen else { return }
-    observeNormalDirection()
-    foldPolicy.playerFullScreen = fullScreen
-    managedFullScreenVertical = nil
-    recoveryEnabled = recoveryEnabled || foldPolicy.handlesAutomaticOrientation
-    invalidateDirectionRequest()
-    recordOrientation(fullScreen ? "player.enter" : "player.exit")
-    // The player's explicit SystemChrome request replaces scene preferences.
-    lastRequestedMask = nil
-    if #available(iOS 16.0, *) { setNeedsUpdateOfSupportedInterfaceOrientations() }
-    if !fullScreen { applyHingeOrientation() }
   }
 
   #if compiler(>=6.4)
     @available(iOS 27.1, *)
     private func hingeDidUpdate(_ hinge: UIHinge?) {
-      let isOpen: Bool?
-      switch hinge?.status {
-      case .closed: isOpen = false
-      case .partiallyOpen, .fullyOpen: isOpen = true
-      default: isOpen = nil
+      let isOpen = hinge.map { $0.status != .closed && $0.status != .unknown } ?? false
+      guard isOpen != isHingeOpen else { return }
+      isHingeOpen = isOpen
+      setNeedsUpdateOfSupportedInterfaceOrientations()
+      // Flutter also stores the lock as the scene's geometry preference, which
+      // UIKit uses when the scene moves to the inner display. Clear it while the
+      // scene is still on the outer display, where programmatic changes are
+      // allowed.
+      if isOpen, let windowScene = view.window?.windowScene {
+        windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .all))
       }
-      updateHingeState(isOpen)
     }
   #endif
 
-  func updateHingeState(_ isOpen: Bool?) {
-    let wasRecognized = foldPolicy.foldableDisplayRecognized
-    let changed = foldPolicy.updateHinge(isOpen: isOpen)
-    if changed && recoveryEnabled {
-      expectedInnerDisplay = isOpen
-      migrationPrepared = false
-      invalidateDirectionRequest()
-    }
-    if changed || isOpen == nil {
-      recordOrientation(isOpen.map { $0 ? "hinge.open" : "hinge.closed" } ?? "hinge.unavailable")
-    }
-    // Hinge changes do not select a portrait/landscape orientation. The
-    // system must already be free to choose before the display moves.
-    if changed && (!wasRecognized || recoveryEnabled) { applyHingeOrientation(force: true) }
-  }
-
-  var isInnerDirectionDisplay: Bool {
-    guard let screen = view.window?.windowScene?.screen else { return false }
-    return min(screen.bounds.width, screen.bounds.height) >= 600
-  }
-
-  private func mask(for orientation: UIInterfaceOrientation) -> UIInterfaceOrientationMask {
-    UIInterfaceOrientationMask(rawValue: 1 << UInt(orientation.rawValue))
-  }
-
-  private func observeNormalDirection() {
-    guard #available(iOS 16.0, *), foldPolicy.handlesAutomaticOrientation,
-      !recoveryEnabled, !foldPolicy.playerFullScreen,
-      !transitioning, super.supportedInterfaceOrientations == .all,
-      let scene = view.window?.windowScene else { return }
-    directions.observe(inner: isInnerDirectionDisplay, device: UIDevice.current.orientation,
-      interface: scene.effectiveGeometry.interfaceOrientation)
-  }
-
-  private func invalidateDirectionRequest() {
-    directionGeneration += 1
-    directionRequest = nil
-    directionFailed = false
-  }
-
-  func beginAutomaticPlayerOrientation(vertical: Bool) -> Bool {
-    guard foldPolicy.handlesAutomaticOrientation else { return false }
-    managedFullScreenVertical = vertical
-    recoveryEnabled = true
-    invalidateDirectionRequest()
-    applyHingeOrientation(force: true)
-    return true
-  }
-
-  func isPlayerOrientationRequestCurrent(_ id: Int) -> Bool {
-    directionRequest?.id == id && foldPolicy.handlesAutomaticOrientation
-  }
-
-  private func issueDirection(_ target: UIInterfaceOrientation?, phase: DirectionPhase) {
-    guard let send = onPlayerOrientationRequest else { return }
-    directionGeneration += 1
-    directionRequest = DirectionRequest(id: directionGeneration, target: target, phase: phase)
-    let name: String?
-    switch target {
-    case .portrait: name = "portraitUp"
-    case .portraitUpsideDown: name = "portraitDown"
-    case .landscapeLeft: name = "landscapeLeft"
-    case .landscapeRight: name = "landscapeRight"
-    default: name = nil
-    }
-    recordOrientation("direction.request.\(phase)", requestedMask: target.map { mask(for: $0).rawValue } ?? 30)
-    send(["id": directionGeneration, "orientations": name.map { [$0] } ?? [String]()])
-  }
-
-  func completePlayerOrientationRequest(_ id: Int, success: Bool) {
-    guard #available(iOS 16.0, *), isPlayerOrientationRequestCurrent(id),
-      var request = directionRequest else { return }
-    guard success else {
-      directionRequest = nil
-      directionFailed = true
-      recordOrientation("direction.error", error: "Flutter rejected orientation synchronization")
-      return
-    }
-    request.acknowledged = true
-    directionRequest = request
-    recordOrientation("direction.ack")
-    if let target = request.target, let scene = view.window?.windowScene,
-      scene.effectiveGeometry.interfaceOrientation != target {
-      scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask(for: target))) { [weak self] error in
-        guard self?.directionRequest?.id == id else { return }
-        self?.directionRequest = nil
-        self?.directionFailed = true
-        self?.recordOrientation("direction.error", error: error.localizedDescription)
-      }
-    }
-    advanceDirectionRequest()
-  }
-
-  private func advanceDirectionRequest() {
-    guard #available(iOS 16.0, *), let request = directionRequest,
-      request.acknowledged, let scene = view.window?.windowScene else { return }
-    if let target = request.target {
-      guard !transitioning, scene.effectiveGeometry.interfaceOrientation == target else { return }
-      if let window = view.window {
-        guard abs(view.bounds.width - window.bounds.width) < 1,
-          abs(view.bounds.height - window.bounds.height) < 1 else { return }
-      }
-      directionRequest = nil
-      recordOrientation("direction.settled")
-      if request.phase == .restore { issueDirection(nil, phase: .release) }
-    } else {
-      directionRequest = nil
-      if request.phase == .prepareMigration { migrationPrepared = true }
-      clearSceneDirection(force: true)
-      applyHingeOrientation()
-    }
-  }
-
-  /// Returns true while this coordinator owns the display-specific request.
-  private func coordinatePlayerDirection(force: Bool) -> Bool {
-    guard #available(iOS 16.0, *), foldPolicy.handlesAutomaticOrientation,
-      let scene = view.window?.windowScene else { return false }
-    if currentDirectionScreen !== scene.screen {
-      currentDirectionScreen = scene.screen
-      invalidateDirectionRequest()
-      lastRequestedMask = nil
-    }
-    if foldPolicy.playerFullScreen && managedFullScreenVertical == nil { return false }
-    guard recoveryEnabled else { return false }
-    if force { directionFailed = false }
-    if directionFailed { return true }
-    let device = UIDevice.current.orientation
-    if (1...4).contains(device.rawValue), device != lastPhysicalOrientation {
-      lastPhysicalOrientation = device
-      invalidateDirectionRequest()
-    }
-    let inner = isInnerDirectionDisplay
-    if let expected = expectedInnerDisplay {
-      if expected != inner {
-        if directionRequest == nil && !migrationPrepared { issueDirection(nil, phase: .prepareMigration) }
-        return true
-      }
-      expectedInnerDisplay = nil
-      migrationPrepared = false
-    }
-    if directionRequest != nil { return true }
-    let upright = directions.upright(inner: inner, device: lastPhysicalOrientation)
-    let holdOuterFullscreen = foldPolicy.playerFullScreen && !inner
-    let target: UIInterfaceOrientation
-    if holdOuterFullscreen {
-      if managedFullScreenVertical == true { target = .portrait }
-      else { target = upright.isLandscape ? upright : .landscapeRight }
-    } else { target = upright }
-    let current = scene.effectiveGeometry.interfaceOrientation
-    let locked: Bool
-    if #available(iOS 26.0, *) { locked = scene.effectiveGeometry.isInterfaceOrientationLocked }
-    else { locked = false }
-    if current != target && (!locked || holdOuterFullscreen) {
-      issueDirection(target, phase: holdOuterFullscreen ? .hold : .restore)
-    } else if holdOuterFullscreen {
-      if super.supportedInterfaceOrientations != mask(for: target) {
-        issueDirection(target, phase: .hold)
-      }
-    } else if super.supportedInterfaceOrientations != .all {
-      issueDirection(nil, phase: .release)
-    } else { clearSceneDirection(force: force) }
-    return true
-  }
-
-  private func applyHingeOrientation(force: Bool = false) {
-    if coordinatePlayerDirection(force: force) { return }
-    if foldPolicy.releasesPortraitLock && super.supportedInterfaceOrientations != .all {
-      if directionRequest == nil { issueDirection(nil, phase: .release) }
-      return
-    }
-    guard foldPolicy.geometryMask != nil else { return }
-    clearSceneDirection(force: force)
-  }
-
-  private func clearSceneDirection(force: Bool) {
-    let mask: UIInterfaceOrientationMask = []
-    guard #available(iOS 16.0, *), let scene = view.window?.windowScene,
-      force || mask != lastRequestedMask || orientationScene !== scene
-        || orientationScreen !== scene.screen else { return }
-    lastRequestedMask = mask
-    orientationScene = scene
-    orientationScreen = scene.screen
-    recordOrientation("preference.clear", requestedMask: mask.rawValue)
-    onFoldOrientationApplied?(false)
-    setNeedsUpdateOfSupportedInterfaceOrientations()
-    scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { [weak self] error in
-      self?.recordOrientation("preference.error", error: error.localizedDescription)
-      // A display migration may temporarily reject geometry; permit a retry
-      // when Flutter reports the settled display dimensions.
-      if self?.orientationScene === scene && self?.lastRequestedMask == mask {
-        self?.lastRequestedMask = nil
-      }
-    }
-  }
-
-  override func viewDidLayoutSubviews() {
-    super.viewDidLayoutSubviews()
-    let scene = view.window?.windowScene
-    let orientation: Int
-    if #available(iOS 16.0, *) {
-      orientation = scene.map { $0.effectiveGeometry.interfaceOrientation.rawValue } ?? 0
-    } else { orientation = 0 }
-    let geometry = "\(view.bounds):\(orientation):\(scene.map { ObjectIdentifier($0.screen).hashValue } ?? 0)"
-    if geometry != lastLayoutGeometry {
-      lastLayoutGeometry = geometry
-      recordOrientation("layout.changed")
-    }
-    observeNormalDirection()
-    advanceDirectionRequest()
-    applyHingeOrientation()
-  }
-
-  func foldOrientationDiagnostics() -> [[String: Any]] {
-    recordOrientation("diagnostics.read")
-    return orientationTrace
-  }
-
-  private func recordOrientation(_ event: String, requestedMask: UInt? = nil, error: String? = nil) {
-    let scene = isViewLoaded ? view.window?.windowScene : nil
-    var entry: [String: Any] = [
-      "time": ProcessInfo.processInfo.systemUptime,
-      "event": event,
-      "automatic": foldPolicy.automatic,
-      "recognized": foldPolicy.foldableDisplayRecognized,
-      "fullScreen": foldPolicy.playerFullScreen,
-      "managedFullscreenDirection": managedFullScreenVertical != nil,
-      "directionRequest": directionRequest?.id ?? 0,
-      "targetOrientation": directionRequest?.target?.rawValue ?? 0,
-      "deviceOrientation": UIDevice.current.orientation.rawValue,
-      "hinge": foldPolicy.isHingeOpen.map { $0 ? "open" : "closed" } ?? "unknown",
-      "flutterMask": super.supportedInterfaceOrientations.rawValue,
-      "supportedMask": supportedInterfaceOrientations.rawValue,
-      "viewBounds": isViewLoaded ? String(describing: view.bounds) : "unloaded",
-    ]
-    if let scene {
-      if #available(iOS 16.0, *) {
-        entry["orientation"] = scene.effectiveGeometry.interfaceOrientation.rawValue
-      }
-      entry["screen"] = ObjectIdentifier(scene.screen).hashValue
-      entry["screenBounds"] = String(describing: scene.screen.bounds)
-      if #available(iOS 26.0, *) {
-        entry["orientationLocked"] = scene.effectiveGeometry.isInterfaceOrientationLocked
-      }
-    }
-    if let requestedMask { entry["requestedMask"] = requestedMask }
-    if let error { entry["error"] = error }
-    orientationTrace.append(entry)
-    if orientationTrace.count > 128 { orientationTrace.removeFirst(orientationTrace.count - 128) }
-  }
-
   override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-    foldPolicy.handlesAutomaticOrientation &&
-      (!foldPolicy.playerFullScreen || managedFullScreenVertical != nil)
-      ? .all : super.supportedInterfaceOrientations
+    isHingeOpen ? .all : super.supportedInterfaceOrientations
   }
 
+  // When hosted in NativeTabBarController, UIKit reads orientations from the
+  // root controller, so forward Flutter's update requests to it.
   @available(iOS 16.0, *)
   override func setNeedsUpdateOfSupportedInterfaceOrientations() {
     super.setNeedsUpdateOfSupportedInterfaceOrientations()
@@ -912,6 +495,7 @@ class DuoFlutterViewController: FlutterViewController {
     }
   }
 }
+
 
 // MARK: - System-managed page navigation and actions
 
@@ -948,7 +532,16 @@ private final class DuoRailDisplayLinkTarget: NSObject {
 /// Plain content inside a shared glass surface needs its own press feedback;
 /// buttons with a glass configuration retain UIKit's built-in interaction.
 @available(iOS 26.0, *)
-private final class DuoRailGroupButton: UIButton {
+private class DuoRailIconButton: UIButton {
+  var iconVerticalOffset: CGFloat = 0
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    imageView?.transform = CGAffineTransform(translationX: 0, y: iconVerticalOffset)
+  }
+}
+
+@available(iOS 26.0, *)
+private final class DuoRailGroupButton: DuoRailIconButton {
   override var isHighlighted: Bool {
     didSet {
       guard isHighlighted != oldValue else { return }
@@ -970,6 +563,11 @@ private final class DuoRailGroupButton: UIButton {
 final class NativePageNavigationController: UINavigationController {
   // Custom UIButton symbol metrics matching the original vertical UITabBar.
   private static let actionIconPointSize: CGFloat = 18.5
+  var onInteractionBlockChanged: ((Bool) -> Void)?
+  private var modalOverlayVisible = false
+  private var keyboardVisible = false
+  private var keyboardObservers = [NSObjectProtocol]()
+  private var interactionBlocked: Bool { modalOverlayVisible || keyboardVisible }
   var onBack: ((@escaping () -> Void) -> Void)?
   var onPageAction: ((Int, String, @escaping () -> Void) -> Void)?
   var onCommentAction: ((Int, @escaping () -> Void) -> Void)?
@@ -1039,6 +637,18 @@ final class NativePageNavigationController: UINavigationController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    keyboardObservers.append(NotificationCenter.default.addObserver(
+      forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: .main) { [weak self] event in
+      guard let self, let window = self.view.window,
+        let frame = event.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+      let windowFrame = window.convert(frame, from: window.screen.coordinateSpace)
+      let local = self.view.convert(windowFrame, from: window)
+      self.setKeyboardVisible(self.view.bounds.intersection(local).height > 1)
+    })
+    keyboardObservers.append(NotificationCenter.default.addObserver(
+      forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { [weak self] _ in
+      self?.setKeyboardVisible(false)
+    })
     navigationBar.isTranslucent = true
     toolbar.isTranslucent = true
     setNavigationBarHidden(true, animated: false)
@@ -1056,6 +666,27 @@ final class NativePageNavigationController: UINavigationController {
     navigationAnchor.widthAnchor.constraint(equalToConstant: 44).isActive = true
     navigationAnchor.heightAnchor.constraint(equalToConstant: 44).isActive = true
     navigationAnchor.geometryChanged = { [weak self] in self?.view.setNeedsLayout() }
+  }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    updateBars()
+  }
+
+  func setKeyboardVisible(_ visible: Bool) {
+    guard keyboardVisible != visible else { return }
+    keyboardVisible = visible
+    needsItemsUpdate = true
+    onInteractionBlockChanged?(interactionBlocked)
+    updateBars()
+  }
+
+  func setModalOverlayVisible(_ visible: Bool) {
+    guard modalOverlayVisible != visible else { return }
+    modalOverlayVisible = visible
+    needsItemsUpdate = true
+    onInteractionBlockChanged?(interactionBlocked)
+    updateBars()
   }
 
   func setCommentAction(owner: Int, visible: Bool, label: String) {
@@ -1104,12 +735,12 @@ final class NativePageNavigationController: UINavigationController {
     guard navigationUpdateDepth == 0, !updatingBars, isViewLoaded, let content = topViewController else { return }
     updatingBars = true
     defer { updatingBars = false }
-    let managesVideo = videoChrome != nil && !playerFullScreen
+    let managesVideo = !interactionBlocked && videoChrome != nil && !playerFullScreen
       && !(videoChrome?["fullScreen"] as? Bool ?? false) && hasVerticalBar && canGoBack
     let isHomeTools = homeToolsRequested && !canGoBack
     // Root tools cannot masquerade as detail-page actions during a route change.
     let pageAllowed = canGoBack && !homeToolsRequested
-    let visible = hasVerticalBar && !playerFullScreen && !(videoChrome?["fullScreen"] as? Bool ?? false)
+    let visible = hasVerticalBar && !interactionBlocked && !playerFullScreen && !(videoChrome?["fullScreen"] as? Bool ?? false)
     let screenSize = view.window?.windowScene?.screen.bounds.size ?? .zero
     let innerDisplay = (content as? NativeTabBarController)?.isInnerDisplay
       ?? (min(screenSize.width, screenSize.height) >= 600)
@@ -1124,18 +755,24 @@ final class NativePageNavigationController: UINavigationController {
     let showsActions = visible && pageAllowed && !toolbarActions.isEmpty
     let showsHome = visible && isHomeTools
     let showsToolbar = showsActions || showsComment
-    let animate = view.window != nil && !UIAccessibility.isReduceMotionEnabled
+    let animate = !interactionBlocked && view.window != nil && !UIAccessibility.isReduceMotionEnabled
       && (needsItemsUpdate || actionsOwner != renderedOwner || visible != barsVisible
         || showsHome != homeToolsVisible || showsActions != actionsVisible
         || showsBack != backButtonVisible)
-    if needsItemsUpdate || visible != barsVisible || showsHome != homeToolsVisible
-      || showsBack != backButtonVisible || outerVideo != renderedOuterVideo {
+    do { // Compare desired commands with UIKit on every layout; HDR can rebuild its bars.
       needsItemsUpdate = false
       content.navigationItem.hidesBackButton = true
       content.navigationItem.leftItemsSupplementBackButton = false
       var leadingItems: [[UIBarButtonItem]] = []
       if showsHome {
-        leadingItems = pageActions.map { [makeActionItem($0, owner: actionsOwner)] }
+        var lastGroup: String?
+        for descriptor in pageActions {
+          let group = descriptor["group"] as? String ?? descriptor["id"] as? String ?? ""
+          let item = makeActionItem(descriptor, owner: actionsOwner)
+          if group == lastGroup { leadingItems[leadingItems.count - 1].append(item) }
+          else { leadingItems.append([item]); lastGroup = group }
+        }
+        for group in leadingItems { for item in group { item.sharesBackground = group.count > 1 } }
       } else if showsBack && !outerVideo {
         var navigationItems = [backItem]
         if let home { navigationItems.append(makeActionItem(home, owner: actionsOwner)) }
@@ -1207,7 +844,8 @@ final class NativePageNavigationController: UINavigationController {
       }
 
       let signature = leadingItems.map { $0.map(ObjectIdentifier.init) }
-      if signature != leadingSignature {
+      let realized = content.navigationItem.leadingItemGroups.map { $0.barButtonItems.map(ObjectIdentifier.init) }
+      if signature != leadingSignature || realized != signature {
         leadingSignature = signature
         content.navigationItem.leadingItemGroups = leadingItems.map {
           .fixedGroup(representativeItem: nil, items: $0)
@@ -1307,7 +945,10 @@ final class NativePageNavigationController: UINavigationController {
     placementLink = link
   }
 
-  deinit { placementLink?.invalidate() }
+  deinit {
+    placementLink?.invalidate()
+    keyboardObservers.forEach { NotificationCenter.default.removeObserver($0) }
+  }
 
   private func setOuterButtonsVisible(_ visible: Bool) {
     guard outerButtonsVisible != visible else { return }
@@ -1395,7 +1036,7 @@ final class NativePageNavigationController: UINavigationController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { self?.commentInFlight = false }
       }
     }
-    let image = UIImage(systemName: "square.and.pencil")
+    let image = UIImage(systemName: "arrowshape.turn.up.left.fill")
     let item: UIBarButtonItem
     if let cached = cachedCommentItem, cached.1 == commentLabel {
       item = cached.2
@@ -1410,6 +1051,48 @@ final class NativePageNavigationController: UINavigationController {
     return item
   }
 
+  private weak var avatarItem: UIBarButtonItem?
+  /// Side of the avatar photo in points; Dart asks for a 120px image to match.
+  private static let avatarSide: CGFloat = 38
+
+  private var avatarURL: String?
+  private var avatarTask: URLSessionDataTask?
+  private func loadAvatar(_ url: String, into item: UIBarButtonItem, placeholder: String?) {
+    avatarItem = item
+    guard url != avatarURL else { return }
+    cancelAvatar()
+    avatarURL = url
+    if item.image == nil, let placeholder { item.image = UIImage(systemName: placeholder) }
+    guard let source = URL(string: url) else { return }
+    avatarTask = URLSession.shared.dataTask(with: source) { [weak self, weak item] data, _, _ in
+      guard let data, let image = UIImage(data: data) else { return }
+      // Nearly fills the round glass button (about 48pt), leaving a thin ring,
+      // so the photo reads as large as the search and notification icons.
+      let size = CGSize(width: Self.avatarSide, height: Self.avatarSide)
+      let circle = UIGraphicsImageRenderer(size: size).image { _ in
+        UIBezierPath(ovalIn: CGRect(origin: .zero, size: size)).addClip()
+        // Fill the circle, cropping the longer side.
+        let scale = max(size.width / image.size.width, size.height / image.size.height)
+        let drawn = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        image.draw(in: CGRect(
+          x: (size.width - drawn.width) / 2, y: (size.height - drawn.height) / 2,
+          width: drawn.width, height: drawn.height))
+      }.withRenderingMode(.alwaysOriginal)
+      DispatchQueue.main.async {
+        guard let self, self.avatarURL == url else { return }
+        item?.image = circle
+      }
+    }
+    avatarTask?.resume()
+  }
+
+  private func cancelAvatar() {
+    avatarTask?.cancel()
+    avatarTask = nil
+    avatarURL = nil
+  }
+
+
   private func makeActionItem(_ descriptor: [String: Any], owner: Int) -> UIBarButtonItem {
     let id = descriptor["id"] as? String ?? ""
     let cacheKey = id
@@ -1418,10 +1101,11 @@ final class NativePageNavigationController: UINavigationController {
     let count = descriptor["count"] as? String
     let selected = descriptor["selected"] as? Bool ?? false
     let enabled = descriptor["enabled"] as? Bool ?? true
+    let selectedColor = (descriptor["selectedColor"] as? Int).map(Self.color(argb:)) ?? UIColor.tintColor
     let symbol: String
     switch id {
     case "search": symbol = "magnifyingglass"
-    case "notifications": symbol = "bell"
+    case "notifications": symbol = "envelope"
     case "home": symbol = "house"
     case "fullscreen": symbol = "arrow.up.left.and.arrow.down.right"
     case "scrollToTop": symbol = "arrow.up.to.line"
@@ -1430,6 +1114,8 @@ final class NativePageNavigationController: UINavigationController {
     case "repost": symbol = "arrowshape.turn.up.right"
     case "share": symbol = "square.and.arrow.up"
     case "compose": symbol = "square.and.pencil"
+    case "mine": symbol = "person.crop.circle"
+    case "reply": symbol = "arrowshape.turn.up.left.fill"
     default: symbol = "ellipsis"
     }
     let handler: UIActionHandler = { [weak self] _ in
@@ -1438,14 +1124,14 @@ final class NativePageNavigationController: UINavigationController {
       guard self.pendingActions.insert(key).inserted else { return }
       self.onPageAction?(owner, id) { [weak self] in self?.pendingActions.remove(key) }
     }
-    let action = UIAction(title: title, image: UIImage(systemName: symbol), handler: handler)
+    let action = UIAction(title: title, image: UIImage(systemName: descriptor["symbol"] as? String ?? symbol), handler: handler)
     if let cached = itemCache[cacheKey], cached.0 == signature {
       if cached.1 != owner { rebind(cached.2, action: action, handler: handler) }
       itemCache[cacheKey] = (signature, owner, cached.2)
       return cached.2
     }
     var item = UIBarButtonItem(title: title, image: action.image, primaryAction: action)
-    if ["search", "notifications", "scrollToTop"].contains(id) {
+    if ["scrollToTop"].contains(id) {
       item = makeHomeToolItem(descriptor, image: action.image, handler: handler)
     } else if let count {
       // Keep count-bearing items compact, with a meaningful overflow title.
@@ -1463,25 +1149,32 @@ final class NativePageNavigationController: UINavigationController {
       configuration.imagePlacement = .top
       configuration.imagePadding = 3
       configuration.contentInsets = .zero
-      configuration.baseForegroundColor = selected ? .systemPink : .label
+      configuration.baseForegroundColor = selected ? selectedColor : .label
       let button = DuoRailGroupButton(type: .system)
       button.configuration = configuration
+      if ["comment", "compose", "reply"].contains(id) { button.iconVerticalOffset = -1 }
       // A primaryAction would replace the short count with its menu title.
       button.addAction(UIAction(identifier: .init("piliplus.item"), handler: handler), for: .touchUpInside)
       button.accessibilityLabel = "\(title)，\(count)"
       button.isEnabled = enabled
       button.accessibilityTraits = selected ? [.button, .selected] : .button
-      button.frame = CGRect(x: 0, y: 0, width: 44, height: 56)
+      button.frame = CGRect(x: 0, y: 0, width: 44, height: 48)
       button.widthAnchor.constraint(equalToConstant: 44).isActive = true
-      button.heightAnchor.constraint(equalToConstant: 56).isActive = true
+      button.heightAnchor.constraint(equalToConstant: 48).isActive = true
       let container = UIView(frame: button.frame)
       container.addSubview(button)
       container.widthAnchor.constraint(equalToConstant: 44).isActive = true
-      container.heightAnchor.constraint(equalToConstant: 56).isActive = true
+      container.heightAnchor.constraint(equalToConstant: 48).isActive = true
       item = UIBarButtonItem(customView: container)
       item.title = title
       item.menuRepresentation = action
     }
+    if count == nil && ["comment", "compose", "reply"].contains(id) {
+      item = makeHomeToolItem(descriptor, image: action.image, handler: handler, glass: false)
+    }
+    if let imageURL = descriptor["image"] as? String { loadAvatar(imageURL, into: item, placeholder: descriptor["symbol"] as? String) }
+    else if id == "mine" { cancelAvatar() }
+    if let badge = descriptor["badge"] as? String { item.badge = badge.isEmpty ? .indicator() : .string(badge) }
     item.identifier = "piliplus.action.\(id)"
     item.isEnabled = enabled
     item.accessibilityLabel = count.map { "\(title)，\($0)" } ?? item.accessibilityLabel ?? title
@@ -1494,9 +1187,15 @@ final class NativePageNavigationController: UINavigationController {
       }
       if #available(iOS 27.1, *) { item.axisBehavior = .verticalPreferred }
     #endif
-    item.tintColor = selected ? .systemPink : nil
+    item.tintColor = selected ? selectedColor : nil
     itemCache[cacheKey] = (signature, owner, item)
     return item
+  }
+
+  private static func color(argb: Int) -> UIColor {
+    UIColor(
+      red: CGFloat((argb >> 16) & 0xff) / 255, green: CGFloat((argb >> 8) & 0xff) / 255,
+      blue: CGFloat(argb & 0xff) / 255, alpha: CGFloat((argb >> 24) & 0xff) / 255)
   }
 
   private func rebind(_ item: UIBarButtonItem, action: UIAction, handler: @escaping UIActionHandler) {
@@ -1510,14 +1209,16 @@ final class NativePageNavigationController: UINavigationController {
   }
 
   private func makeHomeToolItem(_ descriptor: [String: Any], image: UIImage?,
-    handler: @escaping UIActionHandler) -> UIBarButtonItem {
+    handler: @escaping UIActionHandler, glass: Bool = true) -> UIBarButtonItem {
     let title = descriptor["title"] as? String ?? ""
-    var configuration = UIButton.Configuration.glass()
+    var configuration = glass ? UIButton.Configuration.glass() : UIButton.Configuration.plain()
     configuration.cornerStyle = .capsule
     configuration.contentInsets = .zero
     configuration.image = image
     configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: Self.actionIconPointSize)
-    let button = UIButton(configuration: configuration)
+    let button = DuoRailIconButton(type: .system)
+    button.configuration = configuration
+    if ["comment", "compose", "reply"].contains(descriptor["id"] as? String ?? "") { button.iconVerticalOffset = -1 }
     button.addAction(UIAction(identifier: .init("piliplus.item"), handler: handler), for: .touchUpInside)
     button.accessibilityLabel = title
     button.frame = CGRect(x: 0, y: 0, width: 44, height: 44)
@@ -1532,7 +1233,7 @@ final class NativePageNavigationController: UINavigationController {
     container.heightAnchor.constraint(equalToConstant: 44).isActive = true
     let item = UIBarButtonItem(customView: container)
     // The bar must not draw another capsule around our square glass button.
-    item.hidesSharedBackground = true
+    item.hidesSharedBackground = glass
     if #available(iOS 27.0, *) { item.isPaddingRemoved = true }
     item.title = title
     item.accessibilityLabel = button.accessibilityLabel

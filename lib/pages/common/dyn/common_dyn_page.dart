@@ -157,14 +157,10 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
         child: Row(
           mainAxisAlignment: .spaceBetween,
           children: [
-            Obx(
-              () {
-                final count = controller.count.value;
-                return Text(
-                  '${count == -1 ? 0 : NumUtils.numFormat(count)}条回复',
-                );
-              },
-            ),
+            Obx(() {
+              final count = controller.count.value;
+              return Text('${count == -1 ? 0 : NumUtils.numFormat(count)}条回复');
+            }),
             TextButton.icon(
               style: Style.buttonStyle,
               onPressed: controller.queryBySort,
@@ -220,10 +216,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
           );
         }
 
-        final child = httpError(
-          errMsg: '还没有评论',
-          onReload: controller.onReload,
-        );
+        final child = httpError(errMsg: '还没有评论', onReload: controller.onReload);
         if (controller.voteCard case final voteCard?) {
           return SliverMainAxisGroup(
             slivers: [
@@ -236,10 +229,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
         }
         return child;
       case Error(:final errMsg):
-        return httpError(
-          errMsg: errMsg,
-          onReload: controller.onReload,
-        );
+        return httpError(errMsg: errMsg, onReload: controller.onReload);
     }
   }
 
@@ -263,10 +253,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
   }
 
   Widget httpError({String? errMsg, VoidCallback? onReload}) {
-    return HttpError(
-      errMsg: errMsg,
-      onReload: controller.onReload,
-    );
+    return HttpError(errMsg: errMsg, onReload: controller.onReload);
   }
 
   void throttleReplyReply(BuildContext context, ReplyInfo replyItem, int? id) {

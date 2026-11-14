@@ -44,50 +44,53 @@ void main() {
       expect(tester.state(find.byKey(const Key('video'))), same(state));
     },
   );
-  test('fixed layout applies to the inner display in either orientation', () {
-    for (final size in [const Size(626, 890), const Size(890, 626)]) {
+  test(
+    'fixed layout uses wide inner windows and falls back in narrow portrait',
+    () {
+      for (final size in [const Size(626, 890), const Size(890, 626)]) {
+        expect(
+          usesInnerVideoSplit(
+            isIPhone: true,
+            windowSize: size,
+            layout: InnerVideoDetailLayout.split,
+          ),
+          size.width >= 820,
+        );
+        expect(
+          usesInnerVideoSplit(
+            isIPhone: true,
+            windowSize: size,
+            layout: InnerVideoDetailLayout.auto,
+          ),
+          isFalse,
+        );
+      }
       expect(
         usesInnerVideoSplit(
           isIPhone: true,
-          windowSize: size,
+          windowSize: const Size(466, 678),
           layout: InnerVideoDetailLayout.split,
-        ),
-        isTrue,
-      );
-      expect(
-        usesInnerVideoSplit(
-          isIPhone: true,
-          windowSize: size,
-          layout: InnerVideoDetailLayout.auto,
         ),
         isFalse,
       );
-    }
-    expect(
-      usesInnerVideoSplit(
-        isIPhone: true,
-        windowSize: const Size(466, 678),
-        layout: InnerVideoDetailLayout.split,
-      ),
-      isFalse,
-    );
-    expect(
-      usesInnerVideoSplit(
-        isIPhone: false,
-        windowSize: const Size(890, 626),
-        layout: InnerVideoDetailLayout.split,
-      ),
-      isFalse,
-    );
-  });
+      expect(
+        usesInnerVideoSplit(
+          isIPhone: false,
+          windowSize: const Size(890, 626),
+          layout: InnerVideoDetailLayout.split,
+        ),
+        isFalse,
+      );
+    },
+  );
 
-  test('saved mode restores auto or split and safely defaults to split', () {
+  test('saved mode restores auto or split and safely defaults to auto', () {
     expect(InnerVideoDetailLayout.fromStorage(0), InnerVideoDetailLayout.auto);
     expect(InnerVideoDetailLayout.fromStorage(1), InnerVideoDetailLayout.split);
     for (final value in [null, -1, 2, '1']) {
       expect(
         InnerVideoDetailLayout.fromStorage(value),
-        InnerVideoDetailLayout.split,
+        InnerVideoDetailLayout.auto,
       );
     }
   });

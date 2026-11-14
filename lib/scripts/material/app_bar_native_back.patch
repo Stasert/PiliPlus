@@ -1,0 +1,50 @@
+diff --git a/lib/src/app_bar.dart b/lib/src/app_bar.dart
+index 46bd03b..bd804ca 100644
+--- a/lib/src/app_bar.dart
++++ b/lib/src/app_bar.dart
+@@ -701,6 +701,13 @@ class AppBar extends StatefulWidget implements PreferredSizeWidget {
+   /// {@endtemplate}
+   final double? leadingWidth;
+ 
++  /// PiliPlus: returns true when the back (or close) button that the app bar
++  /// would add by itself should be left out, for example because the system
++  /// shows its own back button next to the page. The title then keeps at
++  /// least [NavigationToolbar.kMiddleSpacing] from the leading edge. Called
++  /// during build, so it may depend on inherited widgets.
++  static bool Function(BuildContext context)? hideImpliedBackButton;
++
+   /// {@template material_ui.appbar.toolbarTextStyle}
+   /// The default text style for the AppBar's [leading], and
+   /// [actions] widgets, but not its [title].
+@@ -1009,11 +1016,15 @@ class _AppBarState extends State<AppBar> {
+     }
+ 
+     Widget? leading = widget.leading;
++    bool hidesImpliedBackButton = false;
+     if (leading == null && widget.automaticallyImplyLeading) {
+       if (hasDrawer) {
+         leading = DrawerButton(style: IconButton.styleFrom(iconSize: overallIconTheme.size ?? 24));
+       } else if (parentRoute?.impliesAppBarDismissal ?? false) {
+-        leading = useCloseButton ? const CloseButton() : const BackButton();
++        hidesImpliedBackButton = AppBar.hideImpliedBackButton?.call(context) ?? false;
++        if (!hidesImpliedBackButton) {
++          leading = useCloseButton ? const CloseButton() : const BackButton();
++        }
+       }
+     }
+     if (leading != null) {
+@@ -1147,8 +1158,12 @@ class _AppBarState extends State<AppBar> {
+       middle: title,
+       trailing: actions,
+       centerMiddle: widget._getEffectiveCenterTitle(theme, appBarTheme),
+-      middleSpacing:
+-          widget.titleSpacing ?? appBarTheme.titleSpacing ?? NavigationToolbar.kMiddleSpacing,
++      middleSpacing: hidesImpliedBackButton
++          ? math.max(
++              widget.titleSpacing ?? appBarTheme.titleSpacing ?? NavigationToolbar.kMiddleSpacing,
++              NavigationToolbar.kMiddleSpacing,
++            )
++          : widget.titleSpacing ?? appBarTheme.titleSpacing ?? NavigationToolbar.kMiddleSpacing,
+     );
+ 
+     // If the toolbar is allocated less than toolbarHeight make it

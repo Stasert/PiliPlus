@@ -135,10 +135,7 @@ class _AudioPageState extends State<AudioPage> {
             onPressed: () => shutdownTimerService
               ..onPause ??= _controller.onPause
               ..isPlaying ??= _controller.isPlaying
-              ..showScheduleExitDialog(
-                context,
-                isFullScreen: false,
-              ),
+              ..showScheduleExitDialog(context, isFullScreen: false),
             icon: const Icon(Icons.schedule, size: 22),
           ),
           if (_controller.isUgc)
@@ -170,9 +167,7 @@ class _AudioPageState extends State<AudioPage> {
             : Row(
                 spacing: 12,
                 children: [
-                  Expanded(
-                    child: _buildInfo(colorScheme, isPortrait),
-                  ),
+                  Expanded(child: _buildInfo(colorScheme, isPortrait)),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -278,10 +273,7 @@ class _AudioPageState extends State<AudioPage> {
                             onTap: () {
                               Get.back();
                               if (!isCurr) {
-                                _controller.playIndex(
-                                  index,
-                                  subId: [e.subId],
-                                );
+                                _controller.playIndex(index, subId: [e.subId]);
                               }
                             },
                             title: Text.rich(
@@ -306,9 +298,7 @@ class _AudioPageState extends State<AudioPage> {
                                         Assets.livingChart,
                                         width: 16,
                                         height: 16,
-                                        cacheWidth: 16.cacheSize(
-                                          context,
-                                        ),
+                                        cacheWidth: 16.cacheSize(context),
                                         color: colorScheme.primary,
                                       ),
                                     ),
@@ -350,17 +340,13 @@ class _AudioPageState extends State<AudioPage> {
                                   Assets.livingChart,
                                   width: 16,
                                   height: 16,
-                                  cacheWidth: 16.cacheSize(
-                                    context,
-                                  ),
+                                  cacheWidth: 16.cacheSize(context),
                                   color: colorScheme.primary,
                                 ),
                               ),
                               const TextSpan(text: '  '),
                             ],
-                            TextSpan(
-                              text: item.arc.title,
-                            ),
+                            TextSpan(text: item.arc.title),
                           ],
                         ),
                       ),
@@ -418,10 +404,7 @@ class _AudioPageState extends State<AudioPage> {
                   ),
                 ),
                 Expanded(
-                  child: Material(
-                    type: .transparency,
-                    child: child,
-                  ),
+                  child: Material(type: .transparency, child: child),
                 ),
                 Divider(
                   height: 1,
@@ -477,9 +460,7 @@ class _AudioPageState extends State<AudioPage> {
                     height: 3,
                     decoration: BoxDecoration(
                       color: colorScheme.outline,
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(3),
-                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(3)),
                     ),
                   ),
                 ),
@@ -568,17 +549,10 @@ class _AudioPageState extends State<AudioPage> {
             child: SizedBox(
               width: 40,
               height: 40,
-              child: Icon(
-                size: 26,
-                playMode.icon,
-                color: color,
-              ),
+              child: Icon(size: 26, playMode.icon, color: color),
             ),
           ),
-          Text(
-            playMode.label,
-            style: TextStyle(fontSize: 13, color: color),
-          ),
+          Text(playMode.label, style: TextStyle(fontSize: 13, color: color)),
         ],
       ),
     );
@@ -674,9 +648,7 @@ class _AudioPageState extends State<AudioPage> {
             () => ActionItem(
               animation: _controller.tripleAnimation,
               icon: const Icon(FontAwesomeIcons.thumbsUp),
-              selectIcon: const Icon(
-                FontAwesomeIcons.solidThumbsUp,
-              ),
+              selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
               selectStatus: _controller.hasLike.value,
               semanticsLabel: '点赞',
               text: NumUtils.numFormat(audioItem.stat.like),
@@ -692,55 +664,41 @@ class _AudioPageState extends State<AudioPage> {
               onTap: _controller.actionCoinVideo,
               selectStatus: _controller.hasCoin,
               semanticsLabel: '投币',
-              text: NumUtils.numFormat(
-                audioItem.stat.coin,
-              ),
+              text: NumUtils.numFormat(audioItem.stat.coin),
             ),
           ),
           Obx(
             () => ActionItem(
               animation: _controller.tripleAnimation,
               icon: const Icon(FontAwesomeIcons.star),
-              selectIcon: const Icon(
-                FontAwesomeIcons.solidStar,
-              ),
+              selectIcon: const Icon(FontAwesomeIcons.solidStar),
               onTap: () => _controller.showFavBottomSheet(context),
-              onLongPress: () => _controller.showFavBottomSheet(
-                context,
-                isLongPress: true,
-              ),
+              onLongPress: () =>
+                  _controller.showFavBottomSheet(context, isLongPress: true),
               selectStatus: _controller.hasFav.value,
               semanticsLabel: '收藏',
-              text: NumUtils.numFormat(
-                audioItem.stat.favourite,
-              ),
+              text: NumUtils.numFormat(audioItem.stat.favourite),
             ),
           ),
           ActionItem(
             icon: const Icon(FontAwesomeIcons.comment),
             onTap: _controller.showReply,
             semanticsLabel: '评论',
-            text: NumUtils.numFormat(
-              audioItem.stat.reply,
-            ),
+            text: NumUtils.numFormat(audioItem.stat.reply),
           ),
           ActionItem(
-            icon: const Icon(
-              FontAwesomeIcons.shareFromSquare,
-            ),
+            icon: const Icon(FontAwesomeIcons.shareFromSquare),
             onTap: () => _controller.actionShareVideo(context),
             selectStatus: false,
             semanticsLabel: '分享',
-            text: NumUtils.numFormat(
-              audioItem.stat.share,
-            ),
+            text: NumUtils.numFormat(audioItem.stat.share),
           ),
           if (audioItem.associatedItem.hasOid() &&
               audioItem.associatedItem.subId.isNotEmpty)
             ActionItem(
               icon: const Icon(FontAwesomeIcons.circlePlay),
               onTap: () {
-                _controller.player?.pause();
+                _controller.onPause();
                 PageUtils.toVideoPage(
                   cid: audioItem.associatedItem.subId.first.toInt(),
                   aid: audioItem.associatedItem.oid.toInt(),
@@ -801,17 +759,15 @@ class _AudioPageState extends State<AudioPage> {
             left: 0,
             right: 0,
             bottom: 3.5,
-            child: Obx(
-              () {
-                if (_controller.segmentProgressList.isNotEmpty) {
-                  return SegmentProgressBar(
-                    height: 5,
-                    segments: _controller.segmentProgressList,
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+            child: Obx(() {
+              if (_controller.segmentProgressList.isNotEmpty) {
+                return SegmentProgressBar(
+                  height: 5,
+                  segments: _controller.segmentProgressList,
+                );
+              }
+              return const SizedBox.shrink();
+            }),
           ),
         ],
       );
@@ -839,18 +795,14 @@ class _AudioPageState extends State<AudioPage> {
             Obx(() {
               final position = _controller.position.value;
               if (_controller.player != null) {
-                return Text(
-                  DurationUtils.formatDuration(position),
-                );
+                return Text(DurationUtils.formatDuration(position));
               }
               return const SizedBox.shrink();
             }),
             Obx(() {
               final duration = _controller.duration.value;
               if (_controller.player != null) {
-                return Text(
-                  DurationUtils.formatDuration(duration),
-                );
+                return Text(DurationUtils.formatDuration(duration));
               }
               return const SizedBox.shrink();
             }),
@@ -867,18 +819,12 @@ class _AudioPageState extends State<AudioPage> {
         Obx(
           () => IconButton(
             onPressed: _showPlaySettings,
-            icon: Icon(
-              size: 26,
-              _controller.playMode.value.icon,
-            ),
+            icon: Icon(size: 26, _controller.playMode.value.icon),
           ),
         ),
         IconButton(
           onPressed: _controller.playPrev,
-          icon: const Icon(
-            size: 40,
-            Icons.skip_previous_rounded,
-          ),
+          icon: const Icon(size: 40, Icons.skip_previous_rounded),
         ),
         IconButton(
           onPressed: _controller.playOrPause,
@@ -890,17 +836,11 @@ class _AudioPageState extends State<AudioPage> {
         ),
         IconButton(
           onPressed: _controller.playNext,
-          icon: const Icon(
-            size: 40,
-            Icons.skip_next_rounded,
-          ),
+          icon: const Icon(size: 40, Icons.skip_next_rounded),
         ),
         IconButton(
           onPressed: _showPlaylist,
-          icon: const Icon(
-            size: 26,
-            Icons.menu_rounded,
-          ),
+          icon: const Icon(size: 26, Icons.menu_rounded),
         ),
       ],
     );
@@ -947,7 +887,7 @@ class _AudioPageState extends State<AudioPage> {
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
-                          _controller.player?.pause();
+                          _controller.onPause();
                           Get.toNamed('/member?mid=${audioItem.owner.mid}');
                         },
                         child: Row(
@@ -961,9 +901,7 @@ class _AudioPageState extends State<AudioPage> {
                                 height: 22,
                                 type: ImageType.avatar,
                               ),
-                            Text(
-                              audioItem.owner.name,
-                            ),
+                            Text(audioItem.owner.name),
                           ],
                         ),
                       ),

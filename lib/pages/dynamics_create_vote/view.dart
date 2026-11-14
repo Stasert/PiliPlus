@@ -68,10 +68,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
           bottom: padding.bottom + 100,
         ),
         children: [
-          const Text(
-            '投票类型',
-            style: TextStyle(fontSize: 14),
-          ),
+          const Text('投票类型', style: TextStyle(fontSize: 14)),
           const SizedBox(height: 12),
           _buildType(theme),
           const SizedBox(height: 40),
@@ -101,87 +98,79 @@ class _CreateVotePageState extends State<CreateVotePage> {
           ),
           divider,
           const SizedBox(height: 40),
-          Obx(
-            () {
-              final showImg = _controller.type.value == 1;
-              final showDel = _controller.options.length > 2;
-              List<Widget> children = [];
-              for (int i = 0; i < _controller.options.length; i++) {
-                final e = _controller.options[i];
-                children
-                  ..add(
-                    _buildInput(
-                      theme,
-                      key: ObjectKey(e),
-                      showDel: showDel,
-                      onDel: () {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        _controller.onDel(i);
-                      },
-                      showImg: showImg,
-                      imgUrl: e.imgUrl,
-                      onPickImg: () => EasyThrottle.throttle(
-                        'picImg',
-                        const Duration(milliseconds: 500),
-                        () => _onPickImg(i),
-                      ),
-                      initialValue: e.optDesc,
-                      onChanged: (value) => _controller
-                        ..options[i].optDesc = value
-                        ..updateCanCreate(),
-                      desc: '选项${i + 1}',
-                      hintText: '选项内容，最多20字',
-                      inputFormatters: [LengthLimitingTextInputFormatter(20)],
+          Obx(() {
+            final showImg = _controller.type.value == 1;
+            final showDel = _controller.options.length > 2;
+            List<Widget> children = [];
+            for (int i = 0; i < _controller.options.length; i++) {
+              final e = _controller.options[i];
+              children
+                ..add(
+                  _buildInput(
+                    theme,
+                    key: ObjectKey(e),
+                    showDel: showDel,
+                    onDel: () {
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      _controller.onDel(i);
+                    },
+                    showImg: showImg,
+                    imgUrl: e.imgUrl,
+                    onPickImg: () => EasyThrottle.throttle(
+                      'picImg',
+                      const Duration(milliseconds: 500),
+                      () => _onPickImg(i),
                     ),
-                  )
-                  ..add(divider);
-              }
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...children,
-                  if (_controller.options.length < 20)
-                    FilledButton(
-                      onPressed: () => _controller
-                        ..options.add(Option(optDesc: '', imgUrl: ''))
-                        ..updateCanCreate(),
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.zero,
-                        padding: const EdgeInsets.only(
-                          left: 10,
-                          right: 14,
-                          top: 4,
-                          bottom: 4,
-                        ),
-                        visualDensity: .standard,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: theme.colorScheme.onSurfaceVariant,
-                        backgroundColor: theme.colorScheme.onInverseSurface,
+                    initialValue: e.optDesc,
+                    onChanged: (value) => _controller
+                      ..options[i].optDesc = value
+                      ..updateCanCreate(),
+                    desc: '选项${i + 1}',
+                    hintText: '选项内容，最多20字',
+                    inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                  ),
+                )
+                ..add(divider);
+            }
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...children,
+                if (_controller.options.length < 20)
+                  FilledButton(
+                    onPressed: () => _controller
+                      ..options.add(Option(optDesc: '', imgUrl: ''))
+                      ..updateCanCreate(),
+                    style: FilledButton.styleFrom(
+                      minimumSize: Size.zero,
+                      padding: const EdgeInsets.only(
+                        left: 10,
+                        right: 14,
+                        top: 4,
+                        bottom: 4,
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, size: 16),
-                          Text(
-                            ' 添加选项',
-                            style: TextStyle(fontSize: 13),
-                          ),
-                        ],
-                      ),
+                      visualDensity: .standard,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: theme.colorScheme.onSurfaceVariant,
+                      backgroundColor: theme.colorScheme.onInverseSurface,
                     ),
-                ],
-              );
-            },
-          ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, size: 16),
+                        Text(' 添加选项', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+          }),
           const SizedBox(height: 40),
           Row(
             spacing: 12,
             children: [
-              SizedBox(
-                width: 100,
-                child: Text('单选/多选', style: _leadingStyle),
-              ),
+              SizedBox(width: 100, child: Text('单选/多选', style: _leadingStyle)),
               Obx(() {
                 final choiceCnt = _controller.choiceCnt.value;
                 final choices = List.generate(
@@ -218,10 +207,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
           Row(
             spacing: 12,
             children: [
-              SizedBox(
-                width: 100,
-                child: Text('投票截止时间', style: _leadingStyle),
-              ),
+              SizedBox(width: 100, child: Text('投票截止时间', style: _leadingStyle)),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () async {
@@ -300,13 +286,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
     return Row(
       spacing: 12,
       children: [
-        SizedBox(
-          width: 65,
-          child: Text(
-            desc,
-            style: _leadingStyle,
-          ),
-        ),
+        SizedBox(width: 65, child: Text(desc, style: _leadingStyle)),
         Expanded(
           child: TextFormField(
             key: key,
@@ -332,9 +312,7 @@ class _CreateVotePageState extends State<CreateVotePage> {
               src: imgUrl,
               width: 40,
               height: 40,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(6),
-              ),
+              borderRadius: const BorderRadius.all(Radius.circular(6)),
             ),
           ),
         if (showDel)
@@ -350,81 +328,72 @@ class _CreateVotePageState extends State<CreateVotePage> {
     );
   }
 
-  Widget _buildType(ThemeData theme) => Obx(
-    () {
-      return Row(
-        spacing: 16,
-        children: List.generate(
-          2,
-          (index) {
-            final isEnable = index == _controller.type.value;
-            final style = TextButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 17),
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  color: isEnable
-                      ? theme.colorScheme.secondary
-                      : theme.colorScheme.outline,
-                ),
-                borderRadius: const BorderRadius.all(Radius.circular(6)),
-              ),
-              backgroundColor: isEnable
-                  ? theme.colorScheme.secondaryContainer
-                  : Colors.transparent,
-              foregroundColor: isEnable
-                  ? theme.colorScheme.onSecondaryContainer
-                  : theme.colorScheme.onSurfaceVariant,
-            );
-            Widget child = TextButton(
-              style: style,
-              onPressed: () => _controller
-                ..type.value = index
-                ..updateCanCreate(),
-              child: Text(
-                '${const ['文字', '图片'][index]}投票',
-                style: const TextStyle(fontSize: 14, height: 1),
-                strutStyle: const StrutStyle(
-                  height: 1,
-                  leading: 0,
-                  fontSize: 14,
-                ),
-              ),
-            );
-            if (isEnable) {
-              child = Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  child,
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(1),
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(4),
-                          bottomRight: Radius.circular(6),
-                        ),
-                        color: theme.colorScheme.primary,
-                      ),
-                      child: Icon(
-                        size: 10,
-                        Icons.check,
-                        color: theme.colorScheme.onPrimary,
-                      ),
+  Widget _buildType(ThemeData theme) => Obx(() {
+    return Row(
+      spacing: 16,
+      children: List.generate(2, (index) {
+        final isEnable = index == _controller.type.value;
+        final style = TextButton.styleFrom(
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 17),
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: isEnable
+                  ? theme.colorScheme.secondary
+                  : theme.colorScheme.outline,
+            ),
+            borderRadius: const BorderRadius.all(Radius.circular(6)),
+          ),
+          backgroundColor: isEnable
+              ? theme.colorScheme.secondaryContainer
+              : Colors.transparent,
+          foregroundColor: isEnable
+              ? theme.colorScheme.onSecondaryContainer
+              : theme.colorScheme.onSurfaceVariant,
+        );
+        Widget child = TextButton(
+          style: style,
+          onPressed: () => _controller
+            ..type.value = index
+            ..updateCanCreate(),
+          child: Text(
+            '${const ['文字', '图片'][index]}投票',
+            style: const TextStyle(fontSize: 14, height: 1),
+            strutStyle: const StrutStyle(height: 1, leading: 0, fontSize: 14),
+          ),
+        );
+        if (isEnable) {
+          child = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              child,
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(1),
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(4),
+                      bottomRight: Radius.circular(6),
                     ),
+                    color: theme.colorScheme.primary,
                   ),
-                ],
-              );
-            }
-            return child;
-          },
-        ),
-      );
-    },
-  );
+                  child: Icon(
+                    size: 10,
+                    Icons.check,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return child;
+      }),
+    );
+  });
 
   Future<void> _onPickImg(int index) async {
     try {

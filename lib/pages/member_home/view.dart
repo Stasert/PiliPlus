@@ -256,20 +256,14 @@ class _MemberHomeState extends State<MemberHome>
                 } else {
                   if (param == 'coinArchive') {
                     Get.toSafe(
-                      MemberCoinArcPage(
-                        mid: _ctr.mid,
-                        name: _ctr.username,
-                      ),
+                      MemberCoinArcPage(mid: _ctr.mid, name: _ctr.username),
                     );
                     return;
                   }
 
                   if (param == 'likeArchive') {
                     Get.toSafe(
-                      MemberLikeArcPage(
-                        mid: _ctr.mid,
-                        name: _ctr.username,
-                      ),
+                      MemberLikeArcPage(mid: _ctr.mid, name: _ctr.username),
                     );
                     return;
                   }

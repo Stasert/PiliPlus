@@ -83,10 +83,7 @@ Widget liveRcmdPanel(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: <Color>[
-                        Colors.transparent,
-                        Colors.black45,
-                      ],
+                      colors: <Color>[Colors.transparent, Colors.black45],
                     ),
                     borderRadius: BorderRadius.vertical(
                       bottom: Style.imgRadius,

@@ -9,20 +9,14 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart';
 
 class SeasonSeriesCard extends StatelessWidget {
-  const SeasonSeriesCard({
-    super.key,
-    required this.item,
-    required this.onTap,
-  });
+  const SeasonSeriesCard({super.key, required this.item, required this.onTap});
   final SpaceSsModel item;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    void onLongPress() => imageSaveDialog(
-      title: item.meta!.name,
-      cover: item.meta!.cover,
-    );
+    void onLongPress() =>
+        imageSaveDialog(title: item.meta!.name, cover: item.meta!.cover);
     return Material(
       type: MaterialType.transparency,
       child: InkWell(

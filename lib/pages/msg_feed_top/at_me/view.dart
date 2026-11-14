@@ -187,10 +187,7 @@ class _AtMePageState extends State<AtMePage> {
         }
         return HttpError(onReload: _atMeController.onReload);
       case Error(:final errMsg):
-        return HttpError(
-          errMsg: errMsg,
-          onReload: _atMeController.onReload,
-        );
+        return HttpError(errMsg: errMsg, onReload: _atMeController.onReload);
     }
   }
 }

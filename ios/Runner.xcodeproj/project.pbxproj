@@ -13,6 +13,10 @@
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		A6C2F8E92FCB1A0000C0D3E1 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2F8E82FCB1A0000C0D3E1 /* SceneDelegate.swift */; };
 		B7D3A9F12FCB1A0000C0D3E1 /* PipPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D3A9F02FCB1A0000C0D3E1 /* PipPlugin.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* AirPlayPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293A4B5C6D /* AirPlayPlugin.swift */; };
+		46AAA6BC73B74549A696FF4C /* SystemPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE261045B074D7F908C7CFB /* SystemPlayerPlugin.swift */; };
+		397124CCBB5D47B190F6A667 /* SystemPlayerHLS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D14CEB529D846B7AC9F4044 /* SystemPlayerHLS.swift */; };
+		8C1F2E3D4A5B6C7D8E9F0A1B /* SystemPlayerHEVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2A3B4C5D6E7F8091A2B3C4 /* SystemPlayerHEVC.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -43,6 +47,10 @@
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A6C2F8E82FCB1A0000C0D3E1 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		B7D3A9F02FCB1A0000C0D3E1 /* PipPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipPlugin.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293A4B5C6D /* AirPlayPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirPlayPlugin.swift; sourceTree = "<group>"; };
+		FCE261045B074D7F908C7CFB /* SystemPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPlayerPlugin.swift; sourceTree = "<group>"; };
+		5D14CEB529D846B7AC9F4044 /* SystemPlayerHLS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPlayerHLS.swift; sourceTree = "<group>"; };
+		9D2A3B4C5D6E7F8091A2B3C4 /* SystemPlayerHEVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPlayerHEVC.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -115,6 +123,10 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				A6C2F8E82FCB1A0000C0D3E1 /* SceneDelegate.swift */,
 				B7D3A9F02FCB1A0000C0D3E1 /* PipPlugin.swift */,
+				B2C3D4E5F60718293A4B5C6D /* AirPlayPlugin.swift */,
+				FCE261045B074D7F908C7CFB /* SystemPlayerPlugin.swift */,
+				5D14CEB529D846B7AC9F4044 /* SystemPlayerHLS.swift */,
+				9D2A3B4C5D6E7F8091A2B3C4 /* SystemPlayerHEVC.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -301,6 +313,10 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				A6C2F8E92FCB1A0000C0D3E1 /* SceneDelegate.swift in Sources */,
 				B7D3A9F12FCB1A0000C0D3E1 /* PipPlugin.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* AirPlayPlugin.swift in Sources */,
+				46AAA6BC73B74549A696FF4C /* SystemPlayerPlugin.swift in Sources */,
+				397124CCBB5D47B190F6A667 /* SystemPlayerHLS.swift in Sources */,
+				8C1F2E3D4A5B6C7D8E9F0A1B /* SystemPlayerHEVC.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

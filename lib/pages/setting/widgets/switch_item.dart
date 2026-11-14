@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -10,14 +12,25 @@ class SetSwitchItem extends StatefulWidget {
   final String? subtitle;
   final String setKey;
   final bool defaultVal;
+  final bool enabled;
   final ValueChanged<bool>? onChanged;
+
+  /// Asked before the new value is saved; returning false keeps the old one.
+  final Future<bool> Function(BuildContext context, bool value)? confirmChange;
+
+  /// While this other boolean setting is on, the switch shows on and is
+  /// disabled (its own value is not changed).
+  final String? lockedOnBy;
+
+  /// When set, the switch shows off and is disabled (its own value is not
+  /// changed), and this text replaces the subtitle to say why.
+  final String? lockedOffReason;
   final bool needReboot;
   final Widget? leading;
   final void Function(BuildContext context)? onTap;
   final EdgeInsetsGeometry? contentPadding;
   final TextStyle? titleStyle;
   final bool isSplit;
-  final bool enabled;
 
   const SetSwitchItem({
     super.key,
@@ -25,14 +38,17 @@ class SetSwitchItem extends StatefulWidget {
     this.subtitle,
     required this.setKey,
     this.defaultVal = false,
+    this.enabled = true,
     this.onChanged,
+    this.confirmChange,
+    this.lockedOnBy,
+    this.lockedOffReason,
     this.needReboot = false,
     this.leading,
     this.onTap,
     this.contentPadding,
     this.titleStyle,
     this.isSplit = false,
-    this.enabled = true,
   });
 
   @override
@@ -54,14 +70,32 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
     }
   }
 
+  StreamSubscription? _lockSubscription;
+
+  bool get _locked => switch (widget.lockedOnBy) {
+    final key? => GStorage.setting.get(key, defaultValue: false) == true,
+    null => false,
+  };
+
   @override
   void initState() {
     super.initState();
     _setVal();
+    if (widget.lockedOnBy case final key?) {
+      _lockSubscription = GStorage.setting.watch(key: key).listen((_) {
+        _setVal();
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _lockSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> switchChange([bool? value]) async {
-    if (!widget.enabled) return;
     val = value ?? !val;
 
     if (val && widget.setKey == SettingBoxKey.badCertificateCallback) {
@@ -71,6 +105,14 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
         content: const Text('禁用容易受到中间人攻击'),
       );
       if (!val) return;
+    }
+
+    if (widget.confirmChange case final confirm?) {
+      if (!mounted) return;
+      if (!await confirm(context, val)) {
+        val = !val;
+        return;
+      }
     }
 
     await GStorage.setting.put(widget.setKey, val);
@@ -83,38 +125,41 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lockedOff = !widget.enabled || widget.lockedOffReason != null;
+    final locked = _locked || lockedOff;
+    final subtitle = widget.lockedOffReason ?? widget.subtitle;
     final titleStyle =
         widget.titleStyle ??
         theme.textTheme.titleMedium!.copyWith(
-          color: widget.onTap != null && !val
+          color: locked || (widget.onTap != null && !val)
               ? theme.colorScheme.outline
               : null,
         );
     final subTitleStyle = theme.textTheme.labelMedium!.copyWith(
-      color: theme.colorScheme.outline,
+      color: locked
+          ? theme.colorScheme.outline.withValues(alpha: 0.6)
+          : theme.colorScheme.outline,
     );
 
     final switchBtn = Transform.scale(
       scale: 0.8,
       alignment: .centerRight,
       child: Switch(
-        value: widget.enabled && val,
-        onChanged: widget.enabled ? switchChange : null,
+        value: !lockedOff && (locked || val),
+        onChanged: locked ? null : switchChange,
       ),
     );
 
     Widget child(Widget? trailing) => ListTile(
       contentPadding: widget.contentPadding,
-      enabled: widget.enabled && (widget.onTap == null ? true : val),
-      onTap: !widget.enabled
+      enabled: !locked && (widget.onTap == null || val),
+      onTap: locked
           ? null
           : widget.onTap == null
           ? switchChange
           : () => widget.onTap!(context),
       title: Text(widget.title, style: titleStyle),
-      subtitle: widget.subtitle != null
-          ? Text(widget.subtitle!, style: subTitleStyle)
-          : null,
+      subtitle: subtitle != null ? Text(subtitle, style: subTitleStyle) : null,
       leading: widget.leading,
       trailing: trailing,
     );
@@ -130,10 +175,7 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
               color: theme.colorScheme.outline.withValues(alpha: .3),
             ),
           ),
-          Padding(
-            padding: const .only(left: 4, right: 24),
-            child: switchBtn,
-          ),
+          Padding(padding: const .only(left: 4, right: 24), child: switchBtn),
         ],
       );
     }

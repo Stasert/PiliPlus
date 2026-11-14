@@ -331,10 +331,7 @@ class WhisperSessionItem extends StatelessWidget {
           if (item.hasTimestamp())
             Text(
               DateFormatUtils.dateFormat((item.timestamp ~/ 1000000).toInt()),
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.outline,
-              ),
+              style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
             ),
         ],
       ),

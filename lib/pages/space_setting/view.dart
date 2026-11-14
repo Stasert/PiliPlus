@@ -120,17 +120,11 @@ class _SpaceSettingPageState extends State<SpaceSettingPage> {
         return ListTile(
           dense: true,
           onTap: onChanged,
-          title: Text(
-            item.name,
-            style: const TextStyle(fontSize: 14),
-          ),
+          title: Text(item.name, style: const TextStyle(fontSize: 14)),
           trailing: Transform.scale(
             alignment: Alignment.centerRight,
             scale: 0.8,
-            child: Switch(
-              value: item.boolVal,
-              onChanged: onChanged,
-            ),
+            child: Switch(value: item.boolVal, onChanged: onChanged),
           ),
         );
       },

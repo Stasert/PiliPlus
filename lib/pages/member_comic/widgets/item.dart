@@ -69,16 +69,10 @@ class MemberComicItem extends StatelessWidget {
                     Text(item.title),
                     if (item.styles != null) ...[
                       const SizedBox(height: 6),
-                      Text(
-                        item.styles!,
-                        style: style,
-                      ),
+                      Text(item.styles!, style: style),
                     ],
                     if (item.label != null) ...[
-                      Text(
-                        item.label!,
-                        style: style,
-                      ),
+                      Text(item.label!, style: style),
                     ],
                   ],
                 ),

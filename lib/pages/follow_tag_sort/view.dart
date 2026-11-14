@@ -96,20 +96,13 @@ class _FollowTagSortPageState extends State<FollowTagSortPage>
     );
   }
 
-  Widget _buildItem(
-    MemberTagItemModel item, {
-    bool enabled = true,
-  }) {
+  Widget _buildItem(MemberTagItemModel item, {bool enabled = true}) {
     return ListTile(
       textColor: enabled ? null : scheme.outline,
       key: ValueKey(item.tagid),
       leading: enabled
           ? const Icon(Icons.group_outlined)
-          : Icon(
-              size: 23,
-              Icons.lock_outline,
-              color: scheme.outline,
-            ),
+          : Icon(size: 23, Icons.lock_outline, color: scheme.outline),
       minLeadingWidth: 0,
       title: Text('${item.name} (${item.count})'),
       subtitle: item.tip?.isNotEmpty == true ? Text(item.tip!) : null,
