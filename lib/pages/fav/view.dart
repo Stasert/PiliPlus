@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
@@ -56,7 +55,7 @@ class _FavPageState extends State<FavPage> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('我的收藏'),
         actions: [
           Obx(

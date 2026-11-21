@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/models_new/follow/list.dart';
 import 'package:PiliPlus/pages/fan/controller.dart';
@@ -45,7 +44,7 @@ class _FansPageState extends FollowTypePageState<FansPage> {
   @override
   PreferredSizeWidget? get appBar => widget.showName
       ? AppBar(
-          automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+          automaticallyImplyLeading: true,
           title: controller.isOwner
               ? const Text('我的粉丝')
               : Obx(() {

@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:async';
 
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
@@ -113,9 +111,7 @@ class _DownloadDetailPageState extends State<DownloadDetailPage>
             ctr: this,
             actions: [updateBtn()],
             child: AppBar(
-              automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                context,
-              ),
+              automaticallyImplyLeading: true,
               title: Text(widget.title),
               actions: [
                 IconButton(

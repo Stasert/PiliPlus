@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 // ignore_for_file: constant_identifier_names
 
@@ -385,9 +384,7 @@ abstract final class PiliScheme {
               () => Builder(
                 builder: (context) => SimpleScaffold(
                   appBar: AppBar(
-                    automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                      context,
-                    ),
+                    automaticallyImplyLeading: true,
                     title: const Text('直播'),
                   ),
                   body: const ViewSafeArea(child: LivePage()),
@@ -400,9 +397,7 @@ abstract final class PiliScheme {
               () => Builder(
                 builder: (context) => SimpleScaffold(
                   appBar: AppBar(
-                    automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                      context,
-                    ),
+                    automaticallyImplyLeading: true,
                     title: const Text('排行榜'),
                   ),
                   body: const ViewSafeArea(child: RankPage()),

@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:math';
 
 import 'package:PiliPlus/common/assets.dart';
@@ -12,11 +10,11 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/search/search_trending/list.dart';
 import 'package:PiliPlus/pages/search_trending/controller.dart';
 import 'package:PiliPlus/utils/color_utils.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:get/get.dart';
@@ -39,11 +37,13 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final padding = MediaQuery.viewPaddingOf(context);
-    final size = context.mediaQuerySize;
+    final size = MediaQuery.sizeOf(context);
     final maxWidth = size.width - padding.horizontal;
     final width = size.isPortrait ? maxWidth : min(640.0, maxWidth * 0.6);
     final height = width * 528 / 1125;
-    _offset = height - 56 - padding.top;
+    // 展开竖屏时标题栏在状态栏那一行里（iPhone Duo），按它的底边计算
+    _offset =
+        height - 56 - IOSNativeTabBar.appBarTop(context, safeTop: padding.top);
     return Material(
       child: Stack(
         children: [
@@ -90,9 +90,7 @@ class _SearchTrendingPageState extends State<SearchTrendingPage> {
               final scrollRatio = _scrollRatio.value;
               final flag = maxWidth > width || scrollRatio >= 0.5;
               return AppBar(
-                automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                  context,
-                ),
+                automaticallyImplyLeading: true,
                 title: Opacity(
                   opacity: scrollRatio,
                   child: Text(

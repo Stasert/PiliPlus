@@ -15,6 +15,7 @@ abstract final class SettingBoxKey {
       enableHA = 'enableHA',
       systemPlayerHdr = 'systemPlayerHdr',
       systemPlayerAll = 'systemPlayerAll',
+      toneMapping = 'toneMapping',
       audioOutput = 'audioOutput',
       bufferSize = 'bufferSize',
       bufferSec = 'bufferSec',

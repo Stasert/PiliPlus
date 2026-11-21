@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/button/icon_button.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
@@ -45,7 +44,7 @@ abstract class BaseVideoWebState<
     final colorScheme = ColorScheme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: Text(name),
         actions: [
           Obx(() {

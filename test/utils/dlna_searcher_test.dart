@@ -42,6 +42,28 @@ void main() {
     }
   });
 
+  test('Android cellular and tunnel interfaces are skipped', () {
+    for (final name in ['ap0', 'swlan0', 'rndis0', 'eth0']) {
+      expect(DlnaSearcher.isLanInterfaceName(name), isTrue, reason: name);
+    }
+    for (final name in [
+      'rmnet_data0',
+      'rev_rmnet_data0',
+      'r_rmnet_data0',
+      'ccmni0',
+      'ccmni1',
+      'seth_lte0',
+      'v4-rmnet_data0',
+      'v4-ccmni0',
+      'clat4',
+      'ppp0',
+      'ip6tnl0',
+      'tun0',
+    ]) {
+      expect(DlnaSearcher.isLanInterfaceName(name), isFalse, reason: name);
+    }
+  });
+
   test('unicast search request names the target host', () {
     final text = utf8.decode(
       DlnaSearcher.searchRequest('ssdp:all', host: '192.168.1.5:1900'),

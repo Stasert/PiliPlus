@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -29,7 +28,7 @@ class _WhisperBlockPageState extends State<WhisperBlockPage> {
     final ThemeData theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('消息屏蔽词'),
       ),
       body: Obx(() => _buildBody(theme, _controller.loadingState.value)),

@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:async';
 
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -66,7 +64,7 @@ class _SetDisplayModeState extends State<SetDisplayMode> {
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('屏幕帧率设置'),
       ),
       body: Column(

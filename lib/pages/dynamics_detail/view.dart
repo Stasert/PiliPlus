@@ -126,7 +126,9 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
       }
       _nativeRoute = route;
     }
-    _scheduleNativeActions();
+    // Register during the incoming page's first build, so the transition's
+    // initial native snapshot already contains the detail controls.
+    if (_nativeRoute != null) _publishNativeActions();
   }
 
   void _scheduleNativeActions() {
@@ -146,8 +148,13 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
     IOSNativeTabBar.setPageActions(
       route: _nativeRoute!,
       actions: [
-        if (_canScrollToTop)
-          const NativePageAction(id: 'scrollToTop', title: '回到顶部'),
+        // Keep the toolbar structure stable while scrolling. Only this
+        // independent item's visibility changes; comment controls stay mounted.
+        NativePageAction(
+          id: 'scrollToTop',
+          title: '回到顶部',
+          visible: _canScrollToTop,
+        ),
         if (controller.showDynActionBar) ...[
           NativePageAction(
             id: 'like',
@@ -442,7 +449,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
   }
 
   PreferredSizeWidget _buildAppBar() => AppBar(
-    automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+    automaticallyImplyLeading: true,
     title: Padding(
       padding: const EdgeInsets.only(right: 12),
       child: Obx(() {

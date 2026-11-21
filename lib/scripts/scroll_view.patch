@@ -31,7 +31,7 @@ index ac854f7de8f..fdeba1a88f5 100644
    void _handleDragDown(DragDownDetails details) {
      assert(_drag == null);
      assert(_hold == null);
-@@ -2553,3 +2559,39 @@ class _HorizontalInnerDimensionState extends ScrollableState {
+@@ -2553,3 +2559,28 @@ class _HorizontalInnerDimensionState extends ScrollableState {
      return _configuration.buildOverscrollIndicator(context, child, details);
    }
  }
@@ -47,22 +47,11 @@ index ac854f7de8f..fdeba1a88f5 100644
 +
 +  IsDyAllowed? isDyAllowed;
 +
-+  bool _isDyAllowed = true;
-+
 +  @override
 +  bool isPointerAllowed(PointerEvent event) {
-+    _isDyAllowed = isDyAllowed?.call(event.localPosition.dy) ?? true;
-+    return super.isPointerAllowed(event);
-+  }
-+
-+  @override
-+  T? invokeCallback<T>(
-+    String name,
-+    RecognizerCallback<T> callback, {
-+    String Function()? debugReport,
-+  }) {
-+    if (!_isDyAllowed) return null;
-+    return super.invokeCallback(name, callback, debugReport: debugReport);
++    // Reject only this pointer; never suppress an accepted drag's end/cancel.
++    return (isDyAllowed?.call(event.localPosition.dy) ?? true) &&
++        super.isPointerAllowed(event);
 +  }
 +
 +  @override

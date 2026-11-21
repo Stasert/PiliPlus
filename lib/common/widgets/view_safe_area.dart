@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:material_ui/material_ui.dart';
 
 class ViewSafeArea extends StatelessWidget {
@@ -7,22 +8,34 @@ class ViewSafeArea extends StatelessWidget {
     this.top = false,
     this.left = true,
     this.right = true,
+    this.overVerticalBar = false,
     required this.child,
   });
 
   final bool top;
   final bool left;
   final bool right;
+
+  /// Whether a side inset that is iPhone Duo's vertical status bar is left
+  /// out. Its camera is only at one end, so a widget in the middle of the
+  /// side can sit over the bar.
+  final bool overVerticalBar;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.viewPaddingOf(context);
+    // The native insets change together with the padding above, so this
+    // widget rebuilds when they do.
+    final native = overVerticalBar ? IOSNativeTabBar.safeArea.value : null;
+    const minBar = IOSNativeTabBar.verticalBarMinInset;
+    final leftIsBar = native != null && native.left >= minBar;
+    final rightIsBar = native != null && native.right >= minBar;
     return Padding(
       padding: .only(
         top: top ? padding.top : 0.0,
-        left: left ? padding.left : 0.0,
-        right: right ? padding.right : 0.0,
+        left: left && !leftIsBar ? padding.left : 0.0,
+        right: right && !rightIsBar ? padding.right : 0.0,
       ),
       child: child,
     );
@@ -41,25 +54,11 @@ class SideSafeArea extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = MediaQuery.paddingOf(context);
     final content = SafeArea(top: false, bottom: false, child: child);
-    final route = ModalRoute.of(context);
-    final animations = <Listenable>[
-      ?route?.animation,
-      ?route?.secondaryAnimation,
-    ];
-    return AnimatedBuilder(
-      animation: Listenable.merge(animations),
+    return ColoredBox(
+      color: padding.left == 0 && padding.right == 0
+          ? Colors.transparent
+          : Theme.of(context).scaffoldBackgroundColor,
       child: content,
-      builder: (context, child) {
-        final moving =
-            (route?.animation?.value ?? 1) < 1 ||
-            (route?.secondaryAnimation?.value ?? 0) > 0;
-        return ColoredBox(
-          color: moving || (padding.left == 0 && padding.right == 0)
-              ? Colors.transparent
-              : Theme.of(context).scaffoldBackgroundColor,
-          child: child,
-        );
-      },
     );
   }
 }

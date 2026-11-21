@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
@@ -72,7 +71,7 @@ class VideoReplyReplyPanel extends CommonSlidePage {
       () => Builder(
         builder: (context) => SimpleScaffold(
           appBar: AppBar(
-            automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+            automaticallyImplyLeading: true,
             title: const Text('评论详情'),
             actions: [
               IconButton(

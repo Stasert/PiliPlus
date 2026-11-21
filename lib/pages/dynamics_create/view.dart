@@ -31,7 +31,6 @@ import 'package:PiliPlus/pages/emote/controller.dart';
 import 'package:PiliPlus/pages/emote/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:collection/collection.dart';
@@ -325,8 +324,9 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
     child: Stack(
       clipBehavior: Clip.none,
       children: [
-        if (!IOSNativeTabBar.hasNativeBack(context))
-          Align(
+        NativeBackSlot(
+          hidden: IOSNativeTabBar.hasNativeBack(context),
+          child: Align(
             alignment: Alignment.centerLeft,
             child: SizedBox(
               width: 34,
@@ -348,6 +348,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
               ),
             ),
           ),
+        ),
         Center(
           child: Text(
             _isEdit ? '编辑动态' : '发布动态',
@@ -554,7 +555,7 @@ class _CreateDynPanelState extends CommonRichTextPubPageState<CreateDynPanel> {
 
   @override
   Widget buildMorePanel() {
-    double height = context.isTablet ? 300 : 170;
+    double height = MediaQuery.isTabletOf(context) ? 300 : 170;
     final keyboardHeight = controller.keyboardHeight;
     if (keyboardHeight != 0) {
       height = max(height, keyboardHeight);

@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:async';
 import 'dart:io' show File;
 
@@ -73,7 +71,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('账号资料'),
       ),
       body: _buildBody(),

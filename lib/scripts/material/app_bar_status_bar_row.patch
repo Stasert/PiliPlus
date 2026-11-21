@@ -1,0 +1,92 @@
+diff --git a/lib/src/app_bar.dart b/lib/src/app_bar.dart
+index bd804ca..4bd4e0d 100644
+--- a/lib/src/app_bar.dart
++++ b/lib/src/app_bar.dart
+@@ -708,6 +708,29 @@ class AppBar extends StatefulWidget implements PreferredSizeWidget {
+   /// visibility changes keep the title and adjacent controls in place.
+   static bool Function(BuildContext context)? hideImpliedBackButton;
+ 
++  /// PiliPlus: when this returns non-null for a primary app bar, its toolbar
++  /// goes into the status bar row instead of below the top safe area, the way
++  /// UIKit places a navigation bar on iPhone Duo unfolded in portrait, where
++  /// the status bar only takes the top trailing corner. It is called with the
++  /// toolbar height. The result's top is the toolbar's distance from the top
++  /// of the app bar, in place of the top safe area; its left and right keep
++  /// the toolbar clear of the screen corner and the status bar. A [bottom]
++  /// widget such as a tab bar keeps the full width. Called during build, so it
++  /// may depend on inherited widgets.
++  static EdgeInsets? Function(BuildContext context, double toolbarHeight)? statusBarRowPadding;
++
++  /// PiliPlus: the top padding a [Scaffold] reserves above [appBar], or null
++  /// to use the top safe area. See [statusBarRowPadding].
++  static double? statusBarRowTopFor(BuildContext context, PreferredSizeWidget appBar) {
++    final EdgeInsets? Function(BuildContext, double)? padding = statusBarRowPadding;
++    if (padding == null || appBar is! AppBar || !appBar.primary) {
++      return null;
++    }
++    final double toolbarHeight =
++        appBar.toolbarHeight ?? AppBarTheme.of(context).toolbarHeight ?? kToolbarHeight;
++    return padding(context, toolbarHeight)?.top;
++  }
++
+   /// {@template material_ui.appbar.toolbarTextStyle}
+   /// The default text style for the AppBar's [leading], and
+   /// [actions] widgets, but not its [title].
+@@ -1178,6 +1201,15 @@ class _AppBarState extends State<AppBar> {
+         ),
+       ),
+     );
++    final EdgeInsets? statusBarRow = widget.primary
++        ? AppBar.statusBarRowPadding?.call(context, toolbarHeight)
++        : null;
++    if (statusBarRow != null) {
++      appBar = Padding(
++        padding: EdgeInsets.only(left: statusBarRow.left, right: statusBarRow.right),
++        child: appBar,
++      );
++    }
+     if (widget.bottom != null) {
+       appBar = Column(
+         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+@@ -1204,7 +1236,13 @@ class _AppBarState extends State<AppBar> {
+     }
+ 
+     // The padding applies to the toolbar and tabbar, not the flexible space.
+-    if (widget.primary) {
++    if (statusBarRow != null) {
++      appBar = SafeArea(
++        top: false,
++        bottom: false,
++        child: Padding(padding: EdgeInsets.only(top: statusBarRow.top), child: appBar),
++      );
++    } else if (widget.primary) {
+       appBar = SafeArea(bottom: false, child: appBar);
+     }
+ 
+@@ -2115,7 +2153,10 @@ class _SliverAppBarState extends State<SliverAppBar> with TickerProviderStateMix
+   Widget build(BuildContext context) {
+     assert(!widget.primary || debugCheckHasMediaQuery(context));
+     final double bottomHeight = widget.bottom?.preferredSize.height ?? 0.0;
+-    final double topPadding = widget.primary ? MediaQuery.paddingOf(context).top : 0.0;
++    final double topPadding = widget.primary
++        ? AppBar.statusBarRowPadding?.call(context, widget.toolbarHeight)?.top ??
++              MediaQuery.paddingOf(context).top
++        : 0.0;
+     final double collapsedHeight = (widget.pinned && widget.floating && widget.bottom != null)
+         ? (widget.collapsedHeight ?? 0.0) + bottomHeight + topPadding
+         : (widget.collapsedHeight ?? widget.toolbarHeight) + bottomHeight + topPadding;
+diff --git a/lib/src/scaffold.dart b/lib/src/scaffold.dart
+index 0485390..ec63226 100644
+--- a/lib/src/scaffold.dart
++++ b/lib/src/scaffold.dart
+@@ -3216,7 +3216,9 @@ class ScaffoldState extends State<Scaffold>
+     }
+ 
+     if (widget.appBar != null) {
+-      final double topPadding = widget.primary ? MediaQuery.paddingOf(context).top : 0.0;
++      final double topPadding = widget.primary
++          ? AppBar.statusBarRowTopFor(context, widget.appBar!) ?? MediaQuery.paddingOf(context).top
++          : 0.0;
+       _appBarMaxHeight =
+           AppBar.preferredHeightFor(context, widget.appBar!.preferredSize) + topPadding;
+       assert(_appBarMaxHeight! >= 0.0 && _appBarMaxHeight!.isFinite);

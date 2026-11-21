@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/gesture/horizontal_drag_gesture_recognizer.dart';
@@ -192,7 +191,7 @@ class _LaterPageState extends State<LaterPage>
         ),
       ],
       child: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('稍后再看'),
         actions: [
           IconButton(

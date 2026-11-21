@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -24,7 +23,7 @@ class MultiSelectAppBarWidget extends StatelessWidget
       final style = TextButton.styleFrom(visualDensity: VisualDensity.compact);
       final colorScheme = ColorScheme.of(context);
       return AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         bottom: child.bottom,
         leading: IconButton(
           tooltip: '取消',

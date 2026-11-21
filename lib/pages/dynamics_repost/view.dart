@@ -282,8 +282,9 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              if (!IOSNativeTabBar.hasNativeBack(context))
-                Align(
+              NativeBackSlot(
+                hidden: IOSNativeTabBar.hasNativeBack(context),
+                child: Align(
                   alignment: Alignment.centerLeft,
                   child: SizedBox(
                     width: 34,
@@ -305,6 +306,7 @@ class _RepostPanelState extends CommonRichTextPubPageState<RepostPanel>
                     ),
                   ),
                 ),
+              ),
               Center(
                 child: Text(
                   widget.rid != null ? '分享至动态' : '转发动态',

@@ -485,7 +485,12 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     final videoHeight = isFullScreen
         ? maxHeight - (isWindowMode && !isPortrait ? 0 : padding.top)
         : height;
-    final bottomHeight = maxHeight - padding.top - height - kToolbarHeight;
+    // 展开竖屏时标题栏在状态栏那一行里（iPhone Duo），按它的底边计算
+    final bottomHeight =
+        maxHeight -
+        IOSNativeTabBar.appBarTop(context, safeTop: padding.top) -
+        height -
+        kToolbarHeight;
     return Column(
       children: [
         SizedBox(
@@ -588,7 +593,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   PreferredSizeWidget _buildAppBar(bool isFullScreen) {
     return AppBar(
-      automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+      automaticallyImplyLeading: true,
       primary: !plPlayerController.removeSafeArea,
       toolbarHeight: isFullScreen ? 0 : null,
       backgroundColor: Colors.transparent,

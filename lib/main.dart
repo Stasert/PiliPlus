@@ -32,6 +32,7 @@ import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/scroll_gesture_diagnostics.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
@@ -47,7 +48,6 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:nativeapi/nativeapi.dart' as nativeapi show Size, Rectangle;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -60,6 +60,7 @@ EdgeInsets? tmpPadding;
 final nativeNavigationObserver = NativeNavigationObserver(
   onCanGoBackChanged: IOSNativeTabBar.setCanGoBack,
   onTopRouteChanged: IOSNativeTabBar.setTopRoute,
+  onRailTransition: (state) => IOSNativeTabBar.setRailTransition(state.toMap()),
   onModalOverlayChanged: IOSNativeTabBar.setModalOverlayVisible,
 );
 
@@ -113,6 +114,7 @@ Future<void> _initAppPath() async {
 
 void main() async {
   ScaledWidgetsFlutterBinding.ensureInitialized();
+  ScrollGestureDiagnostics.instance.routeName = () => Get.currentRoute;
   MediaKit.ensureInitialized();
   await _initAppPath();
   try {
@@ -141,8 +143,12 @@ void main() async {
       IOSNativeTabBar.onReturnToRoot = nativeNavigationObserver.returnToRoot;
       await IOSFoldableHelper.init();
       // iPhone Duo 竖状态栏里的返回键，和 Esc 键走同一套逻辑
-      // 竖状态栏里有返回键时，页面左上角不再重复显示
+      // 竖状态栏接管返回键时，页面原位保留不可见占位，避免标题移动
       AppBar.hideImpliedBackButton = IOSNativeTabBar.hidesPageBackButton;
+      // 展开竖屏时标题栏放进状态栏那一行
+      AppBar.statusBarRowPadding = IOSNativeTabBar.statusBarRowPadding;
+      // 视频页的对话框在整个屏幕里居中，不再让开已隐藏的竖状态栏
+      DialogRoute.safeAreaBuilder = IOSNativeTabBar.dialogSafeArea;
     }
     await Future.wait([
       if (Platform.isIOS)
@@ -236,15 +242,13 @@ void main() async {
       final showTitleBar = Pref.showWindowTitleBar;
       // macOS 隐藏标题栏时改用 contentUnderTitleBar，保持窗口可拖动
       final useContentUnderTitleBar = Platform.isMacOS && !showTitleBar;
-      final (nativeapi.Size minSize, nativeapi.Rectangle bounds) =
-          calcWindowBounds();
       window
         ..titleBarStyle = useContentUnderTitleBar || showTitleBar
             ? .normal
             : .hidden
         ..isWindowControlButtonsVisible = true
-        ..bounds = bounds
-        ..minimumSize = minSize
+        ..bounds = calcWindowBounds()
+        ..minimumSize = DeviceUtils.desktopMinSize
         ..isVisibleInTaskbar = true
         ..title = Constants.appName;
       if (useContentUnderTitleBar) window.setContentUnderTitleBar(true);
@@ -364,9 +368,13 @@ class MyApp extends StatelessWidget {
     final uiScale = Pref.uiScale;
     final mediaQuery = MediaQuery.of(context);
     final textScaler = TextScaler.linear(Pref.defaultTextScale);
-    if (Platform.isIOS && tmpPadding == null) {
-      // 放在下面的 MediaQuery 之内，以覆盖它的内边距
-      child = NativeSafeArea(scale: uiScale, child: child!);
+    if (Platform.isIOS) {
+      if (tmpPadding == null) {
+        // 放在下面的 MediaQuery 之内，以覆盖它的内边距
+        child = NativeSafeArea(scale: uiScale, child: child!);
+      }
+      // NativeSafeArea already supplies the stable native back scope.
+      child = TopBarRegionScope(child: child!);
     }
     if (uiScale != 1.0) {
       child = MediaQuery(
@@ -390,8 +398,16 @@ class MyApp extends StatelessWidget {
         child: child!,
       );
     }
+    child = ScrollGestureScope(child: child);
     if (PlatformUtils.isDesktop) {
       return BackDetector(onBack: _onBack, child: child);
+    }
+    if (Platform.isIOS) {
+      return Listener(
+        onPointerUp: (_) => nativeNavigationObserver.releaseRailGesture(),
+        onPointerCancel: (_) => nativeNavigationObserver.releaseRailGesture(),
+        child: child,
+      );
     }
     return child;
   }

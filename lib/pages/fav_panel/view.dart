@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
@@ -132,7 +131,7 @@ class _FavPanelState extends State<FavPanel> {
     return Column(
       children: [
         AppBar(
-          automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+          automaticallyImplyLeading: true,
           backgroundColor: Colors.transparent,
           leading: IconButton(
             tooltip: '关闭',

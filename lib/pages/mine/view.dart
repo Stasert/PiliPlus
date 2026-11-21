@@ -81,9 +81,31 @@ class _MediaPageState extends CommonPageState<MinePage>
     final secondary = theme.colorScheme.secondary;
     return Column(
       children: [
-        Padding(
-          padding: const .symmetric(vertical: 10),
-          child: _buildHeaderActions,
+        // iPhone Duo 展开竖屏：主页面不再给这一页留出顶部安全区，顶部这排按钮
+        // 放进状态栏那一行，位置用系统给的（右边让开状态栏）。单独打开的
+        // 「我的」页面外面已经让开了顶部安全区，不受影响
+        ValueListenableBuilder(
+          valueListenable: _mainController.homeTopBar,
+          builder: (context, region, child) {
+            if (region == null || widget.showBackBtn) return child!;
+            return SizedBox(
+              height: region.height,
+              child: Padding(
+                padding: region.padding,
+                child: Align(
+                  alignment: .topCenter,
+                  child: SizedBox(
+                    height: region.extent,
+                    child: _buildHeaderActions,
+                  ),
+                ),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const .symmetric(vertical: 10),
+            child: _buildHeaderActions,
+          ),
         ),
         Expanded(
           child: Material(
@@ -150,10 +172,13 @@ class _MediaPageState extends CommonPageState<MinePage>
     const padding = EdgeInsets.all(8);
     const style = ButtonStyle(tapTargetSize: .shrinkWrap);
     return PlayerBar(
-      left: widget.showBackBtn && !IOSNativeTabBar.hasNativeBack(context)
-          ? const Padding(
-              padding: EdgeInsets.only(left: 8),
-              child: BackButton(),
+      left: widget.showBackBtn
+          ? NativeBackSlot(
+              hidden: IOSNativeTabBar.hasNativeBack(context),
+              child: const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: BackButton(),
+              ),
             )
           : const SizedBox.shrink(),
       right: Row(

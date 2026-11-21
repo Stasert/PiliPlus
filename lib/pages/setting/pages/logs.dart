@@ -9,6 +9,7 @@ import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/scroll_gesture_diagnostics.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -75,7 +76,7 @@ class _LogsPageState extends State<LogsPage> {
 
   void copyLogs() {
     Utils.copyText(
-      '```\n${logsContent.join('\n\n')}```',
+      '```\n${logsContent.join('\n\n')}\n\n滚动手势记录\n${ScrollGestureDiagnostics.instance.exportReport()}\n```',
       needToast: false,
     );
     if (mounted) {
@@ -142,6 +143,18 @@ class _LogsPageState extends State<LogsPage> {
               PopupMenuItem(
                 onTap: copyLogs,
                 child: const Text('复制日志'),
+              ),
+              PopupMenuItem(
+                onTap: () {
+                  ScrollGestureDiagnostics.instance.restoreScrolling();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('已重置滚动手势'),
+                      duration: _snackBarDisplayDuration,
+                    ),
+                  );
+                },
+                child: const Text('恢复滚动'),
               ),
               PopupMenuItem(
                 onTap: () =>

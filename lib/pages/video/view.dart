@@ -486,7 +486,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                         (entry.value - previous[entry.key]!).abs() > 0.0005,
                   )))) {
         _nativeVideoFrame = frame;
-        _updateVerticalBar();
+        _publishNativeVideoActions();
       }
       _watchNativeVideoGeometry();
     });
@@ -517,40 +517,43 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
     _nativeVideoUpdateScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _nativeVideoUpdateScheduled = false;
-      if (!mounted || _nativeVideoRoute == null) return;
-      final player = videoDetailController.plPlayerController;
-      IOSNativeTabBar.setPageActions(
-        route: _nativeVideoRoute!,
-        actions: const [
-          NativePageAction(id: 'home', title: '返回主页'),
-          NativePageAction(id: 'fullscreen', title: '全屏'),
-        ],
-        video: NativeVideoChrome(
-          controlsVisible:
-              player.showControls.value &&
-              videoDetailController.autoPlay &&
-              videoDetailController.videoState.value &&
-              (player.videoController != null ||
-                  player.usingSystemPlayer.value),
-          fullScreen: player.isFullScreen.value,
-          locked: player.controlsLock.value,
-          frame: _nativeVideoFrame,
-          collapsed: _usesOuterPortraitLayout && _nativeVideoCollapsed,
-          paused: !player.playerStatus.isPlaying,
-        ),
-        onAction: (id) async {
-          if (!_isOnTop || !(_nativeVideoRoute?.isCurrent ?? false)) return;
-          switch (id) {
-            case 'home':
-              player.onCloseAll();
-            case 'fullscreen':
-              await player.triggerFullScreen();
-          }
-        },
-      );
-      _watchNativeVideoGeometry();
+      _publishNativeVideoActions();
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _publishNativeVideoActions() {
+    if (!mounted || _nativeVideoRoute == null) return;
+    final player = videoDetailController.plPlayerController;
+    IOSNativeTabBar.setPageActions(
+      route: _nativeVideoRoute!,
+      actions: const [
+        NativePageAction(id: 'home', title: '返回主页'),
+        NativePageAction(id: 'fullscreen', title: '全屏'),
+      ],
+      video: NativeVideoChrome(
+        controlsVisible:
+            player.showControls.value &&
+            videoDetailController.autoPlay &&
+            videoDetailController.videoState.value &&
+            (player.videoController != null || player.usingSystemPlayer.value),
+        fullScreen: player.isFullScreen.value,
+        locked: player.controlsLock.value,
+        frame: _nativeVideoFrame,
+        collapsed: _usesOuterPortraitLayout && _nativeVideoCollapsed,
+        paused: !player.playerStatus.isPlaying,
+      ),
+      onAction: (id) async {
+        if (!_isOnTop || !(_nativeVideoRoute?.isCurrent ?? false)) return;
+        switch (id) {
+          case 'home':
+            player.onCloseAll();
+          case 'fullscreen':
+            await player.triggerFullScreen();
+        }
+      },
+    );
+    _watchNativeVideoGeometry();
   }
 
   void _updatePadding() {
@@ -712,6 +715,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
         : Theme.of(context);
 
     _updateVerticalBar();
+    _watchNativeVideoGeometry();
   }
 
   bool removeAppBar(bool isFullScreen) =>
@@ -847,7 +851,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
     if (videoDetailController.playedTime == null) {
       icon = Icons.play_arrow_rounded;
       playStat = '立即';
-    } else if (plPlayerController!.isCompleted) {
+    } else if (plPlayerController?.isCompleted == true) {
       icon = CustomIcons.replay_rounded;
       playStat = '重新';
     } else {
@@ -876,9 +880,11 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
           leading: Row(
             mainAxisSize: .min,
             children: [
-              if (!IOSNativeTabBar.usesNativeVideoNavigation(context) &&
-                  !IOSNativeTabBar.hasNativeBack(context))
-                SizedBox(
+              NativeBackSlot(
+                hidden:
+                    IOSNativeTabBar.usesNativeVideoNavigation(context) ||
+                    IOSNativeTabBar.hasNativeBack(context),
+                child: SizedBox(
                   width: 42,
                   height: 34,
                   child: IconButton(
@@ -891,8 +897,10 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                     onPressed: Get.back,
                   ),
                 ),
-              if (!IOSNativeTabBar.usesNativeVideoNavigation(context))
-                SizedBox(
+              ),
+              NativeBackSlot(
+                hidden: IOSNativeTabBar.usesNativeVideoNavigation(context),
+                child: SizedBox(
                   width: 42,
                   height: 34,
                   child: IconButton(
@@ -906,6 +914,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                         videoDetailController.plPlayerController.onCloseAll,
                   ),
                 ),
+              ),
             ],
           ),
           title: playBtn,
@@ -1001,6 +1010,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                 tabs,
                 Expanded(
                   child: tabBarView(
+                    leadingPanelWidth: maxWidth - padding.horizontal - width,
                     controller: videoDetailController.tabCtr,
                     children: [
                       videoIntro(
@@ -1075,6 +1085,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                     buildTabBar(),
                     Expanded(
                       child: tabBarView(
+                        leadingPanelWidth: width,
                         controller: videoDetailController.tabCtr,
                         children: [
                           videoIntro(width: introWidth, height: maxHeight),
@@ -1131,6 +1142,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                         buildTabBar(showIntro: false),
                         Expanded(
                           child: tabBarView(
+                            leadingPanelWidth: introWidth + width,
                             controller: videoDetailController.tabCtr,
                             children: [
                               if (videoDetailController.showReply)
@@ -1224,6 +1236,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                   ),
                   Expanded(
                     child: tabBarView(
+                      leadingPanelWidth: width,
                       controller: videoDetailController.tabCtr,
                       children: [
                         if (videoDetailController.isFileSource)
@@ -1368,9 +1381,11 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
               height: kToolbarHeight,
               child: Row(
                 children: [
-                  if (!IOSNativeTabBar.usesNativeVideoNavigation(context) &&
-                      !IOSNativeTabBar.hasNativeBack(context))
-                    SizedBox(
+                  NativeBackSlot(
+                    hidden:
+                        IOSNativeTabBar.usesNativeVideoNavigation(context) ||
+                        IOSNativeTabBar.hasNativeBack(context),
+                    child: SizedBox(
                       width: 42,
                       height: 34,
                       child: IconButton(
@@ -1386,8 +1401,10 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                         onPressed: Get.back,
                       ),
                     ),
-                  if (!IOSNativeTabBar.usesNativeVideoNavigation(context))
-                    SizedBox(
+                  ),
+                  NativeBackSlot(
+                    hidden: IOSNativeTabBar.usesNativeVideoNavigation(context),
+                    child: SizedBox(
                       width: 42,
                       height: 34,
                       child: IconButton(
@@ -1404,6 +1421,7 @@ class _VideoDetailPageVState extends State<_VideoDetailPageContent>
                             videoDetailController.plPlayerController.onCloseAll,
                       ),
                     ),
+                  ),
                   const Spacer(),
                   _moreBtn(
                     Colors.white,

@@ -1,7 +1,6 @@
-import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/pages/login/controller.dart';
-
 import 'dart:async';
+
+import 'package:PiliPlus/common/widgets/native_root_surface.dart';
 
 import 'package:PiliPlus/utils/ios/native_tab_tools.dart';
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
@@ -23,8 +22,6 @@ import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/desktop/tray_controller.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
-import 'package:PiliPlus/utils/extension/size_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/ios/foldable_helper.dart';
 import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
@@ -53,7 +50,6 @@ class _MainAppState extends PopScopeState<MainApp>
   Brightness? _brightness;
   ModalRoute<dynamic>? _homeRoute;
   bool _homeToolsScheduled = false;
-  StreamSubscription<void>? _accountsListener;
 
   @override
   bool get initCanPop => false;
@@ -83,14 +79,42 @@ class _MainAppState extends PopScopeState<MainApp>
         ),
         ever(_mainController.msgUnReadCount, (_) => _scheduleHomeTools()),
       ]);
-      _accountsListener = Accounts.account.watch().listen(
-        (_) => _scheduleHomeTools(),
-      );
-      _nativeTabBarWorkers.add(
-        ever(_mainController.accountService.face, (_) => _scheduleHomeTools()),
-      );
       _attachNativeTabBar();
+      IOSNativeTabBar.topBarRegion.addListener(_onTopBarRegion);
+      if (IOSFoldableHelper.isIPhone && _mainController.hasHome) {
+        final showTopBar = _mainController.homeController.showTopBar;
+        _homeTopWorkers.addAll([
+          ever(_mainController.selectedIndex, (_) => _syncHomeStatusBar()),
+          if (_mainController.barOffset case final barOffset?)
+            ever(barOffset, (_) => _syncHomeStatusBar()),
+          if (showTopBar != null) ever(showTopBar, (_) => _syncHomeStatusBar()),
+        ]);
+      }
     }
+  }
+
+  final List<Worker> _homeTopWorkers = [];
+
+  /// 主页面是否在最上层（没有打开二级页面）
+  bool _isCurrent = true;
+
+  /// iPhone Duo 展开竖屏：首页顶栏收起时连同顶部的状态栏一起隐藏，
+  /// 和 B 站官方客户端一样；打开其他页面或切到其他标签时恢复
+  void _syncHomeStatusBar({bool force = false}) {
+    final main = _mainController;
+    var hide = false;
+    if (main.homeTopInStatusBar &&
+        _isCurrent &&
+        main.hasHome &&
+        main.homeController.hideTopBar &&
+        main.navigationBars[main.selectedIndex.value] == .home) {
+      if (main.barOffset case final barOffset?) {
+        hide = barOffset.value > main.topBarExtent / 2;
+      } else if (main.homeController.showTopBar case final showTopBar?) {
+        hide = !showTopBar.value;
+      }
+    }
+    IOSNativeTabBar.setMainHidesStatusBar(hide, force: force);
   }
 
   final List<Worker> _nativeTabBarWorkers = [];
@@ -115,10 +139,8 @@ class _MainAppState extends PopScopeState<MainApp>
       }
       final tools = nativeTabTools(
         loggedIn: _mainController.accountService.isLogin.value,
-        hasAccount: Accounts.account.isNotEmpty,
         unread: _mainController.msgUnReadCount.value,
         badgeMode: _mainController.msgBadgeMode,
-        face: _mainController.accountService.face.value,
       );
       IOSNativeTabBar.setPageActions(
         route: _homeRoute!,
@@ -134,16 +156,9 @@ class _MainAppState extends PopScopeState<MainApp>
               group: tool.group,
             ),
         ],
-        onAction: (id) async {
+        onAction: (id) {
           if (!mounted || !(_homeRoute?.isCurrent ?? false)) return;
           switch (id) {
-            case 'mine':
-              if (_mainController.accountService.isLogin.value ||
-                  Accounts.account.isNotEmpty) {
-                await LoginPageController.switchAccountDialog(context);
-              }
-              _mainController.toMinePage();
-
             case 'search':
               Get.toNamed(
                 '/search',
@@ -217,6 +232,10 @@ class _MainAppState extends PopScopeState<MainApp>
     }
     _updateNavMode();
     _homeRoute = ModalRoute.of(context);
+    IOSNativeTabBar.setSurfaceAppearance(
+      color: Theme.of(context).canvasColor.toARGB32(),
+      dark: _colorScheme.brightness == Brightness.dark,
+    );
     _scheduleHomeTools();
   }
 
@@ -235,17 +254,61 @@ class _MainAppState extends PopScopeState<MainApp>
         IOSNativeTabBar.rightRailDevice.value) {
       _mainController.useBottomNav = true;
     } else if (!_mainController.useSideBar) {
-      _mainController.useBottomNav = MediaQuery.sizeOf(context).isPortrait;
+      _mainController.useBottomNav = MediaQuery.isPortraitOf(context);
     }
-    _mainController.homeToolsPlacement.value = resolveHomeToolsPlacement(
-      useBottomNav: _mainController.useBottomNav,
-      nativeToolsAvailable: IOSNativeTabBar.homeToolsAvailable.value,
-    );
+    _updateHomeTop();
   }
 
+  /// iPhone Duo 展开竖屏时状态栏只占顶部右上角，首页的头像、搜索和消息放进
+  /// 这一行（见 [HomePage]），位置用系统给的 [IOSNativeTabBar.topBarRegion]。
+  /// 普通 iPhone 的最短边不到 600，不会触发
+  void _updateHomeTop() {
+    final size = MediaQuery.sizeOf(context);
+    final region = IOSNativeTabBar.topBarRegion.value;
+    final homeTop =
+        region != null &&
+        region.height >= region.padding.top + region.extent &&
+        IOSFoldableHelper.isIPhone &&
+        _mainController.useBottomNav &&
+        !_mainController.useStatusBarNav &&
+        size.height > size.width &&
+        size.shortestSide >= 600;
+    final next = homeTop ? region : null;
+    final changed = homeTop != _mainController.homeTopInStatusBar;
+    // 首页监听它，开合、旋转时即使首页自己没有重建也会切换顶栏
+    _mainController
+      ..homeTopBar.value = next
+      ..topBarExtent = next?.height ?? Style.topBarHeight;
+    if (changed) {
+      // 换了布局，顶栏和底栏重新显示。不能在构建过程中改
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _mainController
+          ..barOffset?.value = 0.0
+          ..showBottomBar?.value = true
+          ..setSearchBar();
+        _syncHomeStatusBar(force: true);
+      });
+    }
+    _mainController.homeToolsPlacement.value = next != null
+        ? HomeToolsPlacement.top
+        : resolveHomeToolsPlacement(
+            useBottomNav: _mainController.useBottomNav,
+            nativeToolsAvailable: IOSNativeTabBar.homeToolsAvailable.value,
+          );
+  }
+
+  /// 系统给的顶栏位置晚于布局到达（要等原生层布局完成）
+  void _onTopBarRegion() {
+    if (mounted) setState(_updateNavMode);
+  }
+
+  // 系统标签栏的隐藏和恢复由 IOSNativeTabBar.navigationObserver 负责：这里只能
+  // 收到 GetX 页面的通知，图片查看器等其他页面盖在主页上时收不到
   @override
   void didPopNext() {
-    IOSNativeTabBar.setHidden(false);
+    _isCurrent = true;
+    _syncHomeStatusBar(force: true);
     addObserverMobile(this);
     _mainController
       ..checkUnreadDynamic()
@@ -257,8 +320,10 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void didPushNext() {
-    // 进入二级页面时隐藏系统标签栏
+    // 原生层保留一级导航实例，用路由动画驱动遮盖层。
     IOSNativeTabBar.setHidden(true);
+    _isCurrent = false;
+    _syncHomeStatusBar(force: true);
     removeObserverMobile(this);
     super.didPushNext();
   }
@@ -291,9 +356,12 @@ class _MainAppState extends PopScopeState<MainApp>
     for (final worker in _nativeTabBarWorkers) {
       worker.dispose();
     }
+    for (final worker in _homeTopWorkers) {
+      worker.dispose();
+    }
+    IOSNativeTabBar.topBarRegion.removeListener(_onTopBarRegion);
     PiliScheme.listener?.cancel();
     GStorage.close();
-    _accountsListener?.cancel();
     super.dispose();
   }
 
@@ -390,7 +458,10 @@ class _MainAppState extends PopScopeState<MainApp>
         if (_mainController.barOffset case final barOffset?) {
           return Obx(
             () => FractionalTranslation(
-              translation: Offset(0.0, barOffset.value / Style.topBarHeight),
+              translation: Offset(
+                0.0,
+                barOffset.value / _mainController.topBarExtent,
+              ),
               child: bottomNav,
             ),
           );
@@ -441,7 +512,7 @@ class _MainAppState extends PopScopeState<MainApp>
 
   Widget _sideBar() {
     if (_mainController.navigationBars.length > 1) {
-      if (context.isTablet && _mainController.optTabletNav) {
+      if (MediaQuery.isTabletOf(context) && _mainController.optTabletNav) {
         return Padding(
           padding: const .only(top: 25),
           child: MediaQuery.removePadding(
@@ -518,19 +589,45 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   Widget build(BuildContext context) {
+    final pages = _mainController.navigationBars.map((tab) {
+      final inStatusRow =
+          _mainController.homeTopInStatusBar &&
+          [
+            NavigationBarType.home,
+            NavigationBarType.dynamics,
+            NavigationBarType.mine,
+          ].contains(tab);
+      final top =
+          !_mainController.useBottomNav ||
+              _mainController.useStatusBarNav ||
+              inStatusRow
+          ? 0.0
+          : tab == NavigationBarType.home
+          ? homePageTopSpacing(
+              _padding.top,
+              _mainController.homeToolsPlacement.value,
+              alreadyNormalized:
+                  RailViewportScope.of(context)?.normalizedTop ?? false,
+            )
+          : _padding.top;
+      return Padding(
+        padding: EdgeInsets.only(top: top),
+        child: ClipRect(clipper: const _ClipAbove(), child: tab.page),
+      );
+    }).toList();
     Widget child;
     if (_mainController.mainTabBarView) {
       child = RailTabBarView(
         controller: _mainController.controller,
         physics: const NeverScrollableScrollPhysics(),
         scrollDirection: _mainController.useBottomNav ? .horizontal : .vertical,
-        children: _mainController.navigationBars.map((i) => i.page).toList(),
+        children: pages,
       );
     } else {
       child = RailPageView(
         controller: _mainController.controller,
         physics: const NeverScrollableScrollPhysics(),
-        children: _mainController.navigationBars.map((i) => i.page).toList(),
+        children: pages,
       );
     }
     child = KeyedSubtree(key: _bodyKey, child: child);
@@ -547,7 +644,7 @@ class _MainAppState extends PopScopeState<MainApp>
                 context: context,
                 removeRight: true,
                 child: Padding(
-                  padding: .only(top: _padding.top, left: _padding.left),
+                  padding: .only(left: _padding.left),
                   child: child,
                 ),
               ),
@@ -569,20 +666,7 @@ class _MainAppState extends PopScopeState<MainApp>
           child: bottomNav,
         );
       }
-      final isHome =
-          _mainController.navigationBars[_mainController.selectedIndex.value] ==
-          NavigationBarType.home;
-      padding = _padding.copyWith(
-        bottom: 0,
-        top: isHome
-            ? homeTopSpacing(
-                _padding.top,
-                _mainController.homeToolsPlacement.value,
-                alreadyNormalized:
-                    RailViewportScope.of(context)?.normalizedTop ?? false,
-              )
-            : _padding.top,
-      );
+      padding = _padding.copyWith(top: 0, bottom: 0);
     } else {
       sideBar = DecoratedBox(
         decoration: BoxDecoration(
@@ -594,7 +678,7 @@ class _MainAppState extends PopScopeState<MainApp>
         ),
         child: _sideBar(),
       );
-      padding = .only(top: _padding.top, right: _padding.right);
+      padding = .only(right: _padding.right);
     }
 
     child = Material(
@@ -605,6 +689,15 @@ class _MainAppState extends PopScopeState<MainApp>
       ),
     );
 
+    if (IOSNativeTabBar.rightRailDevice.value &&
+        _mainController.useNativeTabBar) {
+      child = ValueListenableBuilder(
+        valueListenable: IOSNativeTabBar.pageSurfaceRaised,
+        builder: (_, raised, child) =>
+            NativeRootSurface(raised: raised, child: child!),
+        child: child,
+      );
+    }
     if (PlatformUtils.isMobile) {
       return AnnotatedRegion<SystemUiOverlayStyle>(
         value: _systemUiOverlayStyle,
@@ -655,4 +748,19 @@ class _MainAppState extends PopScopeState<MainApp>
       ],
     );
   }
+}
+
+/// 只裁掉页面顶边以上的部分。页面在里面让开顶部安全区，原来外层的页面容器从
+/// 状态栏下面开始，会裁掉往上收起的顶栏；现在容器从屏幕顶边开始（iPhone Duo
+/// 展开竖屏时首页要画进状态栏那一行），由这里补上。左右不裁，页面里左右滑动的
+/// 内容要能延伸到竖状态栏下面
+class _ClipAbove extends CustomClipper<Rect> {
+  const _ClipAbove();
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTRB(-size.width, 0, size.width * 2, size.height * 2);
+
+  @override
+  bool shouldReclip(_ClipAbove oldClipper) => false;
 }

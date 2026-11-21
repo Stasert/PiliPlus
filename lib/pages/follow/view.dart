@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
@@ -85,7 +84,7 @@ class _FollowPageState extends State<FollowPage>
   }
 
   PreferredSizeWidget get _buildAppBar => AppBar(
-    automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+    automaticallyImplyLeading: true,
     title: _followController.isOwner
         ? const Text('我的关注')
         : Obx(() {

@@ -1,6 +1,5 @@
 import 'package:PiliPlus/common/widgets/native_comment_button.dart';
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 
 import 'dart:math';
 
@@ -352,7 +351,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage>
   }
 
   PreferredSizeWidget _buildAppBar() => AppBar(
-    automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+    automaticallyImplyLeading: true,
     title: Obx(() {
       if (controller.isLoaded.value && controller.showTitle.value) {
         return Text(controller.summary.title!);

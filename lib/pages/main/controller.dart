@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/common/widgets/home_tools_slot.dart';
 import 'package:PiliPlus/grpc/dyn.dart';
@@ -38,12 +39,22 @@ class MainController extends GetxController
   RxBool? showBottomBar;
   late final bool hideBottomBar;
   late final barHideType = Pref.barHideType;
-  bool useBottomNav = false;
+  bool useBottomNav = true;
   // iPhone Duo：导航放在右侧系统状态栏中
   bool useStatusBarNav = false;
   // iOS 26+ iPhone：主导航由系统液态玻璃标签栏绘制
   bool useNativeTabBar = false;
   final homeToolsPlacement = ValueNotifier(HomeToolsPlacement.top);
+
+  /// iPhone Duo 展开竖屏：状态栏在顶部右侧，首页把头像、搜索和消息放进状态栏
+  /// 那一行，上滑时连同状态栏一起收起（见 [HomePage]）。值是系统给的这一行的
+  /// 位置，为 null 时首页用普通的顶栏。首页监听它，开合和旋转时跟着切换
+  final homeTopBar = ValueNotifier<TopBarRegion?>(null);
+
+  bool get homeTopInStatusBar => homeTopBar.value != null;
+
+  /// 首页顶栏能收起的高度，即 [barOffset] 的最大值
+  double topBarExtent = Style.topBarHeight;
   late dynamic controller;
   final RxInt selectedIndex = 0.obs;
 
@@ -360,6 +371,7 @@ class MainController extends GetxController
   void onClose() {
     homeToolsPlacement.dispose();
     barOffset?.close();
+    homeTopBar.dispose();
     controller.dispose();
     super.onClose();
   }

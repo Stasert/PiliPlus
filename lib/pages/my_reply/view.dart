@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:typed_data';
 
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
@@ -58,7 +56,7 @@ class _MyReplyState extends State<MyReply> with DynMixin {
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('我的评论'),
         actions: [
           if (kDebugMode) ...[

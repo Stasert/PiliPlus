@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/widgets/image_viewer/hero_dialog_route.dart';
+import 'package:PiliPlus/pages/common/publish/publish_route.dart';
 import 'package:PiliPlus/utils/ios/native_navigation_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -153,4 +155,35 @@ void main() {
       expect(observer.canGoBack, isFalse);
     },
   );
+
+  // 系统标签栏按 canGoBack 隐藏（见 IOSNativeTabBar._onCanGoBackChanged）
+  testWidgets('the image viewer over the root page hides the tab bar', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    navigatorKey.currentState!.push(
+      HeroDialogRoute<void>(pageBuilder: (_, _, _) => const SizedBox()),
+    );
+    await tester.pumpAndSettle();
+    expect(observer.canGoBack, isTrue);
+    expect(canGoBack.last, isTrue);
+
+    navigatorKey.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(observer.canGoBack, isFalse);
+    expect(canGoBack.last, isFalse);
+  });
+
+  testWidgets('a PublishRoute popup over the root page keeps the tab bar', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    final calls = canGoBack.length;
+    navigatorKey.currentState!.push(
+      PublishRoute<void>(pageBuilder: (_, _, _) => const SizedBox()),
+    );
+    await tester.pumpAndSettle();
+    expect(observer.canGoBack, isFalse);
+    expect(canGoBack.length, calls);
+  });
 }

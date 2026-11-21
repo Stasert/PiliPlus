@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show Encoding, utf8;
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -74,14 +75,101 @@ class _FakeServer implements HttpClientAdapter {
       ignoreRange ? 200 : 206,
       headers: {
         'content-length': ['${body.length}'],
-        if (!ignoreRange)
-          'content-range': ['bytes $start-${total - 1}/$total'],
+        if (!ignoreRange) 'content-range': ['bytes $start-${total - 1}/$total'],
       },
     );
   }
 
   @override
   void close({bool force = false}) {}
+}
+
+/// 只允许写入 [limit] 字节。超出后像存储空间满一样失败：和 dart:io 一样，
+/// add() 不报错，错误由 done（以及 close() 的返回值）报出来，之后的数据被丢掉。
+/// [silent] 为 true 时只丢数据、不报错。
+class _LimitedSink implements IOSink {
+  _LimitedSink(this._real, {required this.limit, this.silent = false});
+
+  final IOSink _real;
+  final int limit;
+  final bool silent;
+  int _written = 0;
+  bool _full = false;
+  final _done = Completer<void>();
+
+  @override
+  void add(List<int> data) {
+    if (_full) return;
+    final room = limit - _written;
+    if (data.length <= room) {
+      _real.add(data);
+      _written += data.length;
+      return;
+    }
+    if (room > 0) {
+      _real.add(data.sublist(0, room));
+      _written += room;
+    }
+    _full = true;
+    if (!silent) {
+      _done.completeError(
+        const FileSystemException(
+          'No space left on device',
+          '',
+          OSError('No space left on device', 28),
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    await _real.close();
+    if (!_done.isCompleted) _done.complete();
+    return _done.future;
+  }
+
+  @override
+  Future<void> get done => _done.future;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// 把 openWrite() 换成 [_LimitedSink]，其余操作交给真实文件。
+class _LimitedFile implements File {
+  _LimitedFile(this._real, this._sinkFor);
+
+  final File _real;
+  final IOSink Function(IOSink real, int existingLength) _sinkFor;
+
+  @override
+  String get path => _real.path;
+
+  @override
+  bool existsSync() => _real.existsSync();
+
+  @override
+  Future<int> length() => _real.length();
+
+  @override
+  void createSync({bool recursive = false, bool exclusive = false}) =>
+      _real.createSync(recursive: recursive, exclusive: exclusive);
+
+  @override
+  Future<FileSystemEntity> delete({bool recursive = false}) =>
+      _real.delete(recursive: recursive);
+
+  @override
+  IOSink openWrite({FileMode mode = FileMode.write, Encoding encoding = utf8}) {
+    final existing = mode == FileMode.writeOnlyAppend && _real.existsSync()
+        ? _real.lengthSync()
+        : 0;
+    return _sinkFor(_real.openWrite(mode: mode, encoding: encoding), existing);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 Uint8List _bytes(int length, [int seed = 0]) =>
@@ -211,6 +299,47 @@ void main() {
     expect(manager.status, DownloadStatus.pause);
     expect(error, isA<DioException>());
     expect(server.ranges, hasLength(1));
+  });
+
+  test('存储空间满（写入失败）时标为失败，而不是把残缺文件当成完成', () async {
+    final content = _bytes(1000);
+    final server = _FakeServer(content);
+    final real = File(filePath);
+    // 磁盘只剩 300 字节
+    final (manager, error) = await IOOverrides.runZoned(
+      () => download(server, maxRetries: 2),
+      createFile: (_) => _LimitedFile(
+        real,
+        (sink, existing) => _LimitedSink(sink, limit: 300 - existing),
+      ),
+    );
+
+    expect(manager.status, DownloadStatus.failDownload);
+    expect(error, isA<FileSystemException>());
+    expect(real.lengthSync(), 300);
+    // 续传次数有上限，不会一直重试
+    expect(server.ranges, ['bytes=0-', 'bytes=300-', 'bytes=300-']);
+  });
+
+  test('写进文件的字节比收到的少时不算完成，从实际大小续传', () async {
+    final content = _bytes(1000);
+    final server = _FakeServer(content);
+    final real = File(filePath);
+    var opened = 0;
+    final (manager, error) = await IOOverrides.runZoned(
+      () => download(server),
+      createFile: (_) => _LimitedFile(
+        real,
+        // 第一次只写进前 500 字节，后面的悄悄丢掉、不报错
+        (sink, _) =>
+            opened++ == 0 ? _LimitedSink(sink, limit: 500, silent: true) : sink,
+      ),
+    );
+
+    expect(error, isNull);
+    expect(manager.status, DownloadStatus.completed);
+    expect(real.readAsBytesSync(), content);
+    expect(server.ranges, ['bytes=0-', 'bytes=500-']);
   });
 
   test('解析 Content-Range', () {

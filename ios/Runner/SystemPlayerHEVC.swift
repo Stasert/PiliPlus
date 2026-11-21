@@ -33,7 +33,7 @@ enum SystemPlayerHEVC {
 
   /// `nal` includes the 2-byte NAL unit header.
   static func transfer(sps nal: [UInt8]) -> Int? {
-    var r = BitReader(unescape(nal))
+    var r = SystemPlayerBitReader(unescape(nal))
     r.skip(16)  // NAL unit header
     r.skip(4)  // sps_video_parameter_set_id
     let maxSubLayersMinus1 = r.u(3)
@@ -83,7 +83,7 @@ enum SystemPlayerHEVC {
     return r.overrun ? nil : transfer
   }
 
-  private static func profileTierLevel(_ r: inout BitReader, _ maxSubLayersMinus1: Int) {
+  private static func profileTierLevel(_ r: inout SystemPlayerBitReader, _ maxSubLayersMinus1: Int) {
     r.skip(96)  // general profile, flags and level
     var profilePresent = [Bool]()
     var levelPresent = [Bool]()
@@ -98,7 +98,7 @@ enum SystemPlayerHEVC {
     }
   }
 
-  private static func scalingListData(_ r: inout BitReader) {
+  private static func scalingListData(_ r: inout SystemPlayerBitReader) {
     for sizeId in 0..<4 {
       for _ in stride(from: 0, to: 6, by: sizeId == 3 ? 3 : 1) {
         if r.u(1) == 0 {
@@ -114,7 +114,7 @@ enum SystemPlayerHEVC {
 
   /// Returns NumDeltaPocs of this set.
   private static func shortTermRefPicSet(
-    _ r: inout BitReader, _ index: Int, _ numDeltaPocs: [Int]
+    _ r: inout SystemPlayerBitReader, _ index: Int, _ numDeltaPocs: [Int]
   ) -> Int {
     if index != 0, r.u(1) == 1 {  // inter_ref_pic_set_prediction_flag
       r.skip(1)  // delta_rps_sign
@@ -154,7 +154,9 @@ enum SystemPlayerHEVC {
   }
 }
 
-private struct BitReader {
+/// Big-endian bit reader for H.265 and AV1 headers. Reads past the end
+/// return 0 and set `overrun`.
+struct SystemPlayerBitReader {
   private let data: [UInt8]
   private var position = 0
   private(set) var overrun = false

@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
@@ -41,9 +40,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
     return SimpleScaffold(
       appBar: showAppBar
           ? AppBar(
-              automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                context,
-              ),
+              automaticallyImplyLeading: true,
               title: const Text('WebDAV 设置'),
             )
           : null,

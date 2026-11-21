@@ -8,6 +8,7 @@ class NativePageAction {
     this.count,
     this.selected = false,
     this.enabled = true,
+    this.visible = true,
     this.badge,
     this.selectedColor,
     this.standalone = false,
@@ -21,6 +22,7 @@ class NativePageAction {
   final String? count;
   final bool selected;
   final bool enabled;
+  final bool visible;
   final String? badge;
   final int? selectedColor;
   final bool standalone;
@@ -34,6 +36,7 @@ class NativePageAction {
     'count': ?count,
     'selected': selected,
     'enabled': enabled,
+    if (!visible) 'hidden': true,
     'badge': ?badge,
     'selectedColor': ?selectedColor,
     if (standalone) 'standalone': true,
@@ -100,11 +103,20 @@ class NativePageActionRegistry {
   final Map<Object, _PageCommands> _pages = {};
   Object? _topPage;
   NativeVideoChrome? _initialVideo;
+  List<NativePageAction> _initialActions = const [];
+  bool _backOnly = true;
   int _nextToken = 0;
 
-  void setTopPage(Object? page, {NativeVideoChrome? initialVideo}) {
+  void setTopPage(
+    Object? page, {
+    NativeVideoChrome? initialVideo,
+    List<NativePageAction> initialActions = const [],
+    bool backOnly = true,
+  }) {
     _topPage = page;
     _initialVideo = initialVideo;
+    _initialActions = List.unmodifiable(initialActions);
+    _backOnly = backOnly;
     _publish();
   }
 
@@ -135,10 +147,11 @@ class NativePageActionRegistry {
     final commands = _pages[_topPage];
     onChanged({
       'owner': commands?.token ?? 0,
+      'backOnly': _backOnly,
       'video': (commands?.video ?? _initialVideo)?.toMap() ?? false,
       'homeTools': commands?.homeTools ?? false,
       'items': [
-        for (final action in commands?.actions ?? <NativePageAction>[])
+        for (final action in commands?.actions ?? _initialActions)
           action.toMap(),
       ],
     });
@@ -148,7 +161,9 @@ class NativePageActionRegistry {
     final commands = _pages[_topPage];
     if (commands == null || commands.token != owner) return;
     if (commands.video case final video? when !video.visible) return;
-    if (!commands.actions.any((action) => action.id == id && action.enabled)) {
+    if (!commands.actions.any(
+      (action) => action.id == id && action.enabled && action.visible,
+    )) {
       return;
     }
     await commands.handler(id);

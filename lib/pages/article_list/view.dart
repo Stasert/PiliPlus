@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -12,6 +11,7 @@ import 'package:PiliPlus/pages/article_list/controller.dart';
 import 'package:PiliPlus/pages/article_list/widgets/item.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
@@ -68,7 +68,12 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
 
   @override
   Widget get gridSkeleton => SliverPadding(
-    padding: EdgeInsets.only(top: padding.top + kToolbarHeight + 120),
+    padding: EdgeInsets.only(
+      top:
+          IOSNativeTabBar.appBarTop(context, safeTop: padding.top) +
+          kToolbarHeight +
+          120,
+    ),
     sliver: super.gridSkeleton,
   );
 
@@ -102,7 +107,7 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
       style: TextStyle(color: colorScheme.outline.withValues(alpha: 0.7)),
     );
     return SliverAppBar.medium(
-      automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+      automaticallyImplyLeading: true,
       title: Text(item.name!),
       pinned: true,
       expandedHeight: kToolbarHeight + 127,
@@ -112,7 +117,9 @@ class _ArticleListPageState extends State<ArticleListPage> with GridMixin {
           margin: EdgeInsets.only(
             left: 12 + padding.left,
             right: 12,
-            top: padding.top + kToolbarHeight,
+            top:
+                IOSNativeTabBar.appBarTop(context, safeTop: padding.top) +
+                kToolbarHeight,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

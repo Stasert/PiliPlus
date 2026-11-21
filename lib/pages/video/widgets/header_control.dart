@@ -61,7 +61,7 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, visibleForTesting;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -453,7 +453,12 @@ class HeaderControlState extends State<HeaderControl>
                 titleStyle: theme.textTheme.bodyLarge,
                 value: () {
                   final value = plPlayerController.superResolutionType.value;
-                  return (value, value.label);
+                  return (
+                    value,
+                    plPlayerController.superResolutionUnsupported
+                        ? '系统播放器不支持'
+                        : value.label,
+                  );
                 },
                 itemBuilder: (_) => enumItemBuilder(SuperResolutionType.values),
                 onSelected: (value, setState) {
@@ -753,17 +758,16 @@ class HeaderControlState extends State<HeaderControl>
     });
   }
 
-  /// Playback info while the iOS system player (AVPlayer) is in use; mpv's
-  /// state is empty then.
-  static Future<void> showSystemPlayerInfo(
-    BuildContext context, {
-    required SystemPlayer player,
-  }) async {
-    final info = await player.info();
-    if (!context.mounted) return;
+  /// Rows of [showSystemPlayerInfo] from `SystemPlayerSession.info`.
+  @visibleForTesting
+  static List<(String, String)> systemPlayerInfoItems(
+    Map<String, Object?> info,
+  ) {
     String? str(String key) => info[key]?.toString();
     String mbps(Object? bps) =>
         bps is num && bps > 0 ? '${(bps / 1e6).toStringAsFixed(2)} Mbps' : '-';
+    // AVPlayer's access log uses negative values for unknown.
+    String count(Object? value) => value is num && value >= 0 ? '$value' : '-';
 
     final width = info['width'] ?? info['codedWidth'];
     final height = info['height'] ?? info['codedHeight'];
@@ -775,14 +779,27 @@ class HeaderControlState extends State<HeaderControl>
             : null);
     // bilibili's declared rate; AVPlayer's measured one is only a fallback.
     final frameRate = info['frameRate'] ?? info['currentFrameRate'];
-    final media = [?str('videoUrl'), ?str('audioUrl')].join('\n');
+    final media = [
+      ?str('videoUrl'),
+      ?str('audioUrl'),
+    ].join('\n');
+    // Read from the stream's format description: what the decoder gets,
+    // unlike the declared range above.
+    final hdrMetadata = [
+      if (info['masteringDisplay'] == true) 'MasteringDisplayColorVolume',
+      if (info['contentLightLevel'] == true) 'ContentLightLevelInfo',
+    ];
+    final dolbyConfig = str('dolbyVisionConfig');
+    final startup = info['startupTime'];
+    final headroom = info['edrHeadroom'];
+    final potential = info['potentialEdrHeadroom'];
 
-    final items = <(String, String)>[
+    return [
       ('Player', 'AVPlayer (system player)'),
       ('Resolution', '${width ?? '-'}x${height ?? '-'}'),
       ('VideoCodecs', str('videoCodecs') ?? '-'),
       (
-        'VideoRange',
+        'VideoRange (declared)',
         switch (range) {
           'PQ' => 'PQ (HDR10 / Dolby Vision)',
           'HLG' => 'HLG',
@@ -790,17 +807,68 @@ class HeaderControlState extends State<HeaderControl>
         },
       ),
       if (dolby != null) ('DolbyVision', dolby),
-      ('FrameRate', frameRate is num ? frameRate.toStringAsFixed(3) : '-'),
+      ('StreamFormat', str('formatSubtype') ?? '-'),
+      ('TransferFunction', str('transferFunction') ?? '-'),
+      ('ColorPrimaries', str('colorPrimaries') ?? '-'),
+      ('YCbCrMatrix', str('yCbCrMatrix') ?? '-'),
+      ('BitsPerComponent', str('bitsPerComponent') ?? '-'),
+      (
+        'HDRMetadata',
+        !info.containsKey('masteringDisplay')
+            ? '-'
+            : hdrMetadata.isEmpty
+            ? 'none'
+            : hdrMetadata.join('\n'),
+      ),
+      (
+        'DolbyVisionConfig',
+        dolbyConfig == null
+            ? '-'
+            : dolbyConfig.isEmpty
+            ? 'none'
+            : dolbyConfig,
+      ),
+      ('ContainsHDRVideo', str('containsHDRVideo') ?? '-'),
+      (
+        'FrameRate',
+        frameRate is num ? frameRate.toStringAsFixed(3) : '-',
+      ),
       ('AudioCodecs', str('audioCodecs') ?? '-'),
       ('Bitrate', mbps(info['indicatedBitrate'])),
+      ('AverageVideoBitrate', mbps(info['averageVideoBitrate'])),
       ('ObservedBitrate', mbps(info['observedBitrate'])),
       ('DroppedFrames', str('droppedFrames') ?? '-'),
+      ('Stalls', count(info['stalls'])),
+      (
+        'StartupTime',
+        startup is num && startup >= 0
+            ? '${startup.toStringAsFixed(2)} s'
+            : '-',
+      ),
       ('Media', media.isEmpty ? '-' : media),
       ('rate', str('rate') ?? '-'),
       ('hwdec', 'videotoolbox (AVPlayer)'),
-      if (info['eligibleForHDR'] == false)
-        ('HDR', 'not supported on this device'),
+      // The device and screen can show HDR; not that this video is HDR.
+      ('EligibleForHDR', str('eligibleForHDR') ?? '-'),
+      // Above 1 while the screen shows HDR (EDR) content.
+      if (headroom is num)
+        (
+          'EDRHeadroom',
+          '${headroom.toStringAsFixed(2)} (potential '
+              '${potential is num ? potential.toStringAsFixed(2) : '-'})',
+        ),
     ];
+  }
+
+  /// Playback info while the iOS system player (AVPlayer) is in use; mpv's
+  /// state is empty then.
+  static Future<void> showSystemPlayerInfo(
+    BuildContext context, {
+    required SystemPlayer player,
+  }) async {
+    final info = await player.info();
+    if (!context.mounted) return;
+    final items = systemPlayerInfoItems(info);
 
     showDialog(
       context: context,
@@ -1713,9 +1781,11 @@ class HeaderControlState extends State<HeaderControl>
             left: Row(
               mainAxisSize: .min,
               children: [
-                if (!IOSNativeTabBar.usesNativeVideoNavigation(context) &&
-                    !IOSNativeTabBar.hasNativeBack(context))
-                  SizedBox(
+                NativeBackSlot(
+                  hidden:
+                      IOSNativeTabBar.usesNativeVideoNavigation(context) ||
+                      IOSNativeTabBar.hasNativeBack(context),
+                  child: SizedBox(
                     width: btnWidth,
                     height: btnHeight,
                     child: IconButton(
@@ -1730,21 +1800,24 @@ class HeaderControlState extends State<HeaderControl>
                           .onPopInvokedWithResult(false, null),
                     ),
                   ),
-                if (!IOSNativeTabBar.usesNativeVideoNavigation(context) &&
-                    !plPlayerController.isDesktopPip &&
+                ),
+                if (!plPlayerController.isDesktopPip &&
                     (!isFullScreen || !isPortrait))
-                  SizedBox(
-                    width: btnWidth,
-                    height: btnHeight,
-                    child: IconButton(
-                      tooltip: '返回主页',
-                      style: btnStyle,
-                      icon: const Icon(
-                        FontAwesomeIcons.house,
-                        size: 15,
-                        color: Colors.white,
+                  NativeBackSlot(
+                    hidden: IOSNativeTabBar.usesNativeVideoNavigation(context),
+                    child: SizedBox(
+                      width: btnWidth,
+                      height: btnHeight,
+                      child: IconButton(
+                        tooltip: '返回主页',
+                        style: btnStyle,
+                        icon: const Icon(
+                          FontAwesomeIcons.house,
+                          size: 15,
+                          color: Colors.white,
+                        ),
+                        onPressed: plPlayerController.onCloseAll,
                       ),
-                      onPressed: plPlayerController.onCloseAll,
                     ),
                   ),
               ],

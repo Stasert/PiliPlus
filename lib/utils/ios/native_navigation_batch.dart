@@ -17,14 +17,22 @@ class NativeNavigationBatch {
     _scheduled = true;
     schedule(() {
       _scheduled = false;
-      final changes = <String, Object>{};
-      for (final entry in _latest.entries) {
-        if (!_equality.equals(_sent[entry.key], entry.value)) {
-          changes[entry.key] = entry.value;
-          _sent[entry.key] = entry.value;
-        }
-      }
+      final changes = takeChanges();
       if (changes.isNotEmpty) onChanged(changes);
     });
+  }
+
+  /// An entering route sends its initial commands with the transition start.
+  /// The scheduled frame flush still handles later data, without replaying the
+  /// initial snapshot or restoring an older page owner.
+  Map<String, Object> takeChanges() {
+    final changes = <String, Object>{};
+    for (final entry in _latest.entries) {
+      if (!_equality.equals(_sent[entry.key], entry.value)) {
+        changes[entry.key] = entry.value;
+        _sent[entry.key] = entry.value;
+      }
+    }
+    return changes;
   }
 }

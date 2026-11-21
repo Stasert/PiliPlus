@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/native_comment_button.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
@@ -61,7 +60,7 @@ class _MainReplyPageState extends State<MainReplyPage>
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('查看评论'),
       ),
       body: fabAnimWrapper(
@@ -195,7 +194,7 @@ class _MainReplyPageState extends State<MainReplyPage>
       () => Builder(
         builder: (context) => SimpleScaffold(
           appBar: AppBar(
-            automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+            automaticallyImplyLeading: true,
             title: const Text('评论详情'),
             shape: Border(
               bottom: BorderSide(

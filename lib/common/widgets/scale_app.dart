@@ -2,6 +2,7 @@ import 'dart:async' show scheduleMicrotask;
 import 'dart:collection' show Queue;
 import 'dart:ui' show PointerDataPacket;
 
+import 'package:PiliPlus/utils/scroll_gesture_diagnostics.dart';
 import 'package:flutter/gestures.dart' show PointerEventConverter;
 import 'package:flutter/rendering.dart' show RenderView, ViewConfiguration;
 import 'package:flutter/widgets.dart';
@@ -58,6 +59,7 @@ class ScaledWidgetsFlutterBinding extends WidgetsFlutterBinding {
   @override
   void initInstances() {
     super.initInstances();
+    ScrollGestureDiagnostics.instance.attach(this);
     platformDispatcher.onPointerDataPacket = _handlePointerDataPacket;
   }
 

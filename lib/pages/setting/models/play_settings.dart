@@ -67,7 +67,8 @@ List<SettingsModel> get playSettings => [
     title: '超分辨率',
     leading: const Icon(Icons.stay_current_landscape_outlined),
     getSubtitle: () =>
-        '当前:「${Pref.superResolutionType.label}」\n默认设置对番剧生效, 其他视频默认关闭\n超分辨率需要启用硬件解码, 若启用硬件解码后仍然不生效, 尝试切换硬件解码器为 auto-copy',
+        '当前:「${Pref.superResolutionType.label}」\n默认设置对番剧生效, 其他视频默认关闭\n超分辨率需要启用硬件解码, 若启用硬件解码后仍然不生效, 尝试切换硬件解码器为 auto-copy'
+        '${Platform.isIOS ? '\n仅对内置播放器生效' : ''}',
     onTap: _showSuperResolutionDialog,
   ),
   const SwitchModel(
@@ -227,7 +228,9 @@ List<SettingsModel> get playSettings => [
     NormalModel(
       title: '播放器音量',
       leading: const Icon(Icons.volume_up),
-      getSubtitle: () => '当前:「${Pref.playerVolume.toStringAsFixed(0)}%」',
+      getSubtitle: () =>
+          '当前:「${Pref.playerVolume.toStringAsFixed(0)}%」'
+          '${Platform.isIOS ? '，仅对内置播放器生效' : ''}',
       onTap: showPlayerVolumeDialog,
     )
   else

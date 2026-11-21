@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:async';
 import 'dart:io';
 
@@ -93,9 +91,7 @@ class _AboutPageState extends State<AboutPage> {
     return SimpleScaffold(
       appBar: showAppBar
           ? AppBar(
-              automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                context,
-              ),
+              automaticallyImplyLeading: true,
               title: const Text('关于'),
             )
           : null,

@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 
 import 'dart:async';
@@ -61,7 +60,7 @@ class _WhisperDetailPageState
     );
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {

@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -87,8 +86,7 @@ class _HotPageState extends State<HotPage>
                               () => Builder(
                                 builder: (context) => SimpleScaffold(
                                   appBar: AppBar(
-                                    automaticallyImplyLeading:
-                                        !IOSNativeTabBar.hasNativeBack(context),
+                                    automaticallyImplyLeading: true,
                                     title: const Text('排行榜'),
                                   ),
                                   body: const ViewSafeArea(child: RankPage()),

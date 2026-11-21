@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/dynamic_sliver_app_bar/dynamic_sliver_app_bar.dart';
@@ -22,6 +21,7 @@ import 'package:PiliPlus/pages/dynamics_topic/controller.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
@@ -172,13 +172,19 @@ class _DynTopicPageState extends State<DynTopicPage>
     EdgeInsets padding,
     LoadingState<TopDetails?> topState,
   ) {
+    // 展开竖屏时标题栏在状态栏那一行里（iPhone Duo）：创建者那一行和标题栏
+    // 对齐，右边同样让开状态栏
+    final appBarTop = IOSNativeTabBar.appBarTop(context, safeTop: padding.top);
+    final statusBarRight =
+        IOSNativeTabBar.statusBarRowPadding(context, kToolbarHeight)?.right ??
+        0;
     return switch (topState) {
       Loading() => SliverAppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
       ),
       Success(:final response) when response != null => DynamicSliverAppBar.medium(
         onPerformLayout: (value) => _controller.appbarOffset =
-            value.height - kToolbarHeight - padding.top,
+            value.height - kToolbarHeight - appBarTop,
         title: IgnorePointer(child: Text(response.topicItem!.name)),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -192,7 +198,7 @@ class _DynTopicPageState extends State<DynTopicPage>
             ),
           ),
           padding: EdgeInsets.only(
-            top: padding.top,
+            top: appBarTop,
             left: 12 + padding.left,
             right: 12 + padding.right,
           ),
@@ -202,7 +208,7 @@ class _DynTopicPageState extends State<DynTopicPage>
               Container(
                 height: kToolbarHeight,
                 alignment: Alignment.centerLeft,
-                margin: const EdgeInsets.only(left: 45, right: 78),
+                margin: EdgeInsets.only(left: 45, right: 78 + statusBarRight),
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () =>
@@ -339,7 +345,7 @@ class _DynTopicPageState extends State<DynTopicPage>
         ],
       ),
       _ => SliverAppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         pinned: true,
         title: Text(_controller.topicName),
       ),

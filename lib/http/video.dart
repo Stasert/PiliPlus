@@ -1112,12 +1112,15 @@ abstract final class VideoHttp {
     required int objectId, // aid, epid
     required int playurlType, // ugc 1, pgc 2
     int? qn,
+    // Without it a progressive MP4 (durl); 4048 gives DASH and no durl.
+    int? fnval,
   }) async {
     final accessKey = Accounts.get(AccountType.video).accessKey;
     final params = {
       'access_key': ?accessKey,
       'actionKey': 'appkey',
       'cid': cid,
+      if (fnval != null) ...{'fnval': fnval, 'fnver': 0},
       'fourk': 1,
       'is_proj': 1,
       'mobile_access_key': ?accessKey,

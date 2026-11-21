@@ -88,6 +88,8 @@ $SliverPatch = "lib/scripts/sliver.patch"
 
 $RefreshIndicatorPatch = "lib/scripts/refresh_indicator.patch"
 
+$MediaQueryPatch = "lib/scripts/media_query.patch"
+
 # TODO: remove
 # https://github.com/flutter/flutter/issues/124078
 # https://github.com/flutter/flutter/pull/183261
@@ -131,7 +133,7 @@ $patches = @($ModalBarrierPatch, $TextSelectionPatch, $MouseCursorPatch,
             $ScrollPositionPatch, $ScrollablePatch, $ScrollableGesturePatch,
             $DraggableScrollableSheetPatch, $ScaffoldPatch, $TextPatch,
             $TextPainterPatch, $SliverPatch, $RefreshIndicatorPatch,
-            $DoubleTapGesturePatch)
+            $DoubleTapGesturePatch, $MediaQueryPatch)
 
 switch ($platform.ToLower()) {
     "android" {
@@ -211,14 +213,26 @@ $RefreshIndicatorPatchMaterial = "lib/scripts/material/refresh_indicator.patch"
 
 $TabsPatchMaterial = "lib/scripts/material/tabs.patch"
 
-# iPhone Duo: lets the app drop the back button AppBar adds by itself when the
-# vertical bar shows one. Applied on every platform, since main.dart sets
+# iPhone Duo: keeps an invisible leading placeholder when the vertical bar
+# owns the back button. Applied on every platform, since main.dart sets
 # AppBar.hideImpliedBackButton.
 $AppBarNativeBackPatchMaterial = "lib/scripts/material/app_bar_native_back.patch"
 
+# iPhone Duo: lets dialogs on the video page stay centered over the hidden
+# vertical bar instead of keeping clear of it. Applied on every platform, since
+# main.dart sets DialogRoute.safeAreaBuilder.
+$DialogSafeAreaPatchMaterial = "lib/scripts/material/dialog_safe_area.patch"
+
+# iPhone Duo: lets primary app bars put their toolbar in the status bar row
+# when the device is unfolded in portrait (the status bar only takes the top
+# trailing corner). Applied on every platform, since main.dart sets
+# AppBar.statusBarRowPadding.
+$AppBarStatusBarRowPatchMaterial = "lib/scripts/material/app_bar_status_bar_row.patch"
+
 $patches_material = @($ModalBarrierPatchMaterial, $NavigationDrawerPatchMaterial, $PopupMenuPatchMaterial,
                     $FABPatchMaterial, $TextFieldPatchMaterial, $ScaffoldPatchMaterial, $RefreshIndicatorPatchMaterial,
-                    $TabsPatchMaterial, $AppBarNativeBackPatchMaterial)
+                    $TabsPatchMaterial, $AppBarNativeBackPatchMaterial, $DialogSafeAreaPatchMaterial,
+                    $AppBarStatusBarRowPatchMaterial)
 
 $PubCacheDir = "~/.pub-cache"
 

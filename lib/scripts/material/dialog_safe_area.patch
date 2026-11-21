@@ -1,0 +1,27 @@
+diff --git a/lib/src/dialog.dart b/lib/src/dialog.dart
+--- a/lib/src/dialog.dart
++++ b/lib/src/dialog.dart
+@@ -1920,7 +1920,9 @@
+                final Widget pageChild = Builder(builder: builder);
+                Widget dialog = themes?.wrap(pageChild) ?? pageChild;
+                if (useSafeArea) {
+-                 dialog = SafeArea(child: dialog);
++                 dialog =
++                     DialogRoute.safeAreaBuilder?.call(buildContext, dialog) ??
++                     SafeArea(child: dialog);
+                }
+                // Prevent clicks inside the dialog from passing through to the barrier
+                dialog = Semantics(hitTestBehavior: SemanticsHitTestBehavior.opaque, child: dialog);
+@@ -1931,6 +1933,12 @@
+          transitionBuilder: _buildMaterialDialogTransitions,
+        );
+ 
++  /// PiliPlus: replaces the [SafeArea] that keeps a dialog clear of the
++  /// screen insets when `useSafeArea` is true, for example to let the dialog
++  /// stay centered over an inset that the page behind it does not avoid.
++  /// Returns the dialog wrapped in its own safe area.
++  static Widget Function(BuildContext context, Widget dialog)? safeAreaBuilder;
++
+   CurvedAnimation? _curvedAnimation;
+   final AnimationStyle? _animationStyle;
+ 

@@ -31,6 +31,8 @@ abstract final class IOSNativeTabBar {
       NativeBackScope.isVisible(context) && ModalRoute.of(context) is PageRoute;
 
   static const _channel = MethodChannel('piliplus/native_tab_bar');
+  static final topBarRegion = ValueNotifier<TopBarRegion?>(null);
+  static const double verticalBarMinInset = 72;
 
   static bool _enabled = false;
   static bool _canGoBack = false;
@@ -48,6 +50,11 @@ abstract final class IOSNativeTabBar {
   static final pageActionsVisible = ValueNotifier(false);
   static final videoNavigationEnabled = ValueNotifier(false);
   static final playerFullScreen = ValueNotifier(false);
+
+  /// Root stays in its original UIKit hierarchy at rest. During a page
+  /// transition it leaves the rail transparent before the native lift.
+  static final pageSurfaceRaised = ValueNotifier(false);
+
   static bool _modalOverlayVisible = false;
   static void setModalOverlayVisible(bool visible) {
     _modalOverlayVisible = visible;
@@ -123,6 +130,68 @@ abstract final class IOSNativeTabBar {
     onChanged: (state) => _sendNavigationState('setPageActions', state),
   );
 
+  static EdgeInsets? statusBarRowPadding(
+    BuildContext context,
+    double toolbarHeight,
+  ) {
+    final region = context
+        .dependOnInheritedWidgetOfExactType<TopBarRegionScope>()
+        ?.notifier
+        ?.value;
+    if (region == null) return null;
+    final size = MediaQuery.sizeOf(context);
+    if (size.height <= size.width || size.shortestSide < 600) return null;
+    // 顶部安全区已被外层用掉（不在屏幕顶边），或状态栏已隐藏
+    if (MediaQuery.paddingOf(context).top < region.height - 0.5) return null;
+    return EdgeInsets.only(
+      top: region.topFor(toolbarHeight),
+      left: region.padding.left,
+      right: region.padding.right,
+    );
+  }
+
+  /// 主标题栏（高 [toolbarHeight]）离屏幕顶边的距离：展开竖屏时它放在状态栏
+  /// 那一行里（见 [statusBarRowPadding]），其他时候在顶部安全区 [safeTop]
+  /// 下面。自己按「顶部安全区 + 标题栏高度」排版的页面（可折叠头部的高度、
+  /// 头部背景里内容的位置）用它代替顶部安全区，和标题栏对齐
+  static double appBarTop(
+    BuildContext context, {
+    double toolbarHeight = 56,
+    double? safeTop,
+  }) =>
+      statusBarRowPadding(context, toolbarHeight)?.top ??
+      safeTop ??
+      MediaQuery.paddingOf(context).top;
+
+  static Widget dialogSafeArea(BuildContext context, Widget dialog) =>
+      ValueListenableBuilder<bool>(
+        valueListenable: playerFullScreen,
+        builder: (context, hidden, dialog) {
+          if (!_isVideoRoute && !hidden) return SafeArea(child: dialog!);
+          final padding = MediaQuery.paddingOf(context);
+          final vertical = [
+            padding.top,
+            padding.bottom,
+            padding.left,
+            padding.right,
+          ].reduce(max);
+          return SafeArea(
+            left: false,
+            right: false,
+            minimum: EdgeInsets.symmetric(vertical: vertical),
+            child: dialog!,
+          );
+        },
+        child: dialog,
+      );
+
+  static bool? _mainHidesStatusBar;
+  static void setMainHidesStatusBar(bool hides, {bool force = false}) {
+    if (!Platform.isIOS || (!force && hides == _mainHidesStatusBar)) return;
+    _mainHidesStatusBar = hides;
+    _channel.invokeMethod('setMainHidesStatusBar', hides).ignore();
+  }
+
   static void setTopRoute(Route<dynamic>? route) {
     _comments.setTopPage(route);
     final path = Uri.tryParse(route?.settings.name ?? '')?.path;
@@ -131,8 +200,15 @@ abstract final class IOSNativeTabBar {
     if (!_isVideoRoute && playerFullScreen.value) setFullScreen(false);
     _pageActions.setTopPage(
       route,
-      initialVideo:
-          route is PageRoute && {'/videoV', '/VideoDetailPageV'}.contains(path)
+      // Home belongs only to the two video-detail route names above.
+      backOnly: !_isVideoRoute,
+      initialActions: _isVideoRoute
+          ? const [
+              NativePageAction(id: 'home', title: '返回主页'),
+              NativePageAction(id: 'fullscreen', title: '全屏'),
+            ]
+          : const [],
+      initialVideo: _isVideoRoute
           ? const NativeVideoChrome(
               controlsVisible: false,
               fullScreen: false,
@@ -201,6 +277,49 @@ abstract final class IOSNativeTabBar {
     }
   }
 
+  static Map<String, Object>? _surfaceAppearance;
+  static void setSurfaceAppearance({required int color, required bool dark}) {
+    if (!isAvailable) return;
+    final previous = _surfaceAppearance;
+    if (previous?['color'] == color && previous?['dark'] == dark) return;
+    _surfaceAppearance = {'color': color, 'dark': dark};
+    _invokeNavigation('setSurfaceAppearance', _surfaceAppearance!);
+  }
+
+  /// Sent directly per animation frame, ahead of the coalesced page-owner update.
+  static Map<String, Object>? _pendingRailTransition;
+  static bool _preparingPageSurface = false;
+  static void setRailTransition(Map<String, Object> state) {
+    if (!Platform.isIOS) return;
+    if (_preparingPageSurface) {
+      _pendingRailTransition = state;
+    } else if (state['active'] == true && !pageSurfaceRaised.value) {
+      pageSurfaceRaised.value = true;
+      _preparingPageSurface = true;
+      _pendingRailTransition = state;
+      // Paint the transparent root rail first; coalesce progress while UIKit
+      // is waiting so an older first frame cannot rewind an edge swipe.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _preparingPageSurface = false;
+        final pending = _pendingRailTransition;
+        _pendingRailTransition = null;
+        if (pending != null) _sendRailTransition(pending);
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
+    } else {
+      _sendRailTransition(state);
+    }
+  }
+
+  static void _sendRailTransition(Map<String, Object> state) {
+    final entering = state['active'] == true && state['returning'] == false;
+    final commands = entering ? _navigationBatch.takeChanges() : null;
+    _invokeNavigation('setRailTransition', {
+      ...state,
+      if (commands != null && commands.isNotEmpty) 'navigation': commands,
+    });
+  }
+
   static void setCanGoBack(bool value) {
     // The observer publishes the route immediately afterwards. Bundle this
     // value with its commands so UIKit never animates an intermediate empty bar.
@@ -251,6 +370,10 @@ abstract final class IOSNativeTabBar {
           if (call.arguments == true) rightRailDevice.value = true;
         case 'back':
           await onBack?.call();
+        case 'home':
+          await onReturnToRoot?.call();
+        case 'pageSurfaceRaised':
+          pageSurfaceRaised.value = call.arguments == true;
         case 'backButtonVisible':
           backButtonVisible.value = call.arguments as bool;
         case 'select':
@@ -265,6 +388,8 @@ abstract final class IOSNativeTabBar {
           } finally {
             _selectingTab = false;
           }
+        case 'topBarRegion':
+          topBarRegion.value = TopBarRegion.fromMap(call.arguments);
         case 'safeArea':
           _setSafeArea(call.arguments);
         case 'verticalBarHidden':
@@ -273,6 +398,9 @@ abstract final class IOSNativeTabBar {
     });
     try {
       _setSafeArea(await _channel.invokeMethod('getSafeArea'));
+      topBarRegion.value = TopBarRegion.fromMap(
+        await _channel.invokeMethod('getTopBarRegion'),
+      );
       final capabilities = await _channel.invokeMapMethod<String, bool>(
         'getNavigationCapabilities',
       );
@@ -418,6 +546,22 @@ class NativeSafeArea extends StatelessWidget {
   }
 }
 
+/// Retains a relocated control's original size, without paint, hits or semantics.
+class NativeBackSlot extends StatelessWidget {
+  const NativeBackSlot({super.key, required this.hidden, required this.child});
+  final bool hidden;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Visibility(
+    visible: !hidden,
+    maintainSize: true,
+    maintainAnimation: true,
+    maintainState: true,
+    child: child,
+  );
+}
+
 /// Keeps page-local back controls in sync with the native button's actual visibility.
 class NativeBackScope extends InheritedNotifier<ValueNotifier<bool>> {
   NativeBackScope({super.key, required super.child})
@@ -454,4 +598,72 @@ class NativeVideoNavigationScope
           ?.notifier
           ?.value ??
       false;
+}
+
+class TopBarRegionScope
+    extends InheritedNotifier<ValueNotifier<TopBarRegion?>> {
+  TopBarRegionScope({super.key, required super.child})
+    : super(notifier: IOSNativeTabBar.topBarRegion);
+}
+
+/// 状态栏那一行里能放顶栏的位置，见 [IOSNativeTabBar.topBarRegion]
+@immutable
+class TopBarRegion {
+  const TopBarRegion({
+    required this.height,
+    required this.padding,
+    required this.extent,
+    required this.center,
+    required this.minTop,
+  });
+
+  /// 状态栏那一行的高度（状态栏显示时的顶部安全区）
+  final double height;
+
+  /// 顶栏在这一行里的位置：上边距，以及左右避开圆角和状态栏的距离
+  final EdgeInsets padding;
+
+  /// 顶栏的高度
+  final double extent;
+
+  /// 系统让顶栏在这一行里垂直居中的中线位置（距屏幕顶边）
+  final double center;
+
+  /// 顶栏离屏幕顶边的最小距离
+  final double minTop;
+
+  /// 高度为 [barHeight] 的顶栏离屏幕顶边的距离，和系统放顶栏的方式一致：
+  /// 以 [center] 居中，但不小于 [minTop]
+  double topFor(double barHeight) => max(minTop, center - barHeight / 2);
+
+  /// 原生层的值是原生 pt，按界面缩放换算成 Flutter 的逻辑像素，和
+  /// [NativeSafeArea] 一样
+  static TopBarRegion? fromMap(Object? value) {
+    if (value is! Map) return null;
+    final scale = Pref.uiScale;
+    double get(String key) => ((value[key] as num?)?.toDouble() ?? 0) / scale;
+    return TopBarRegion(
+      height: get('height'),
+      padding: EdgeInsets.only(
+        top: get('top'),
+        left: get('left'),
+        right: get('right'),
+      ),
+      extent: get('extent'),
+      center: get('center'),
+      minTop: get('minTop'),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is TopBarRegion &&
+      other.height == height &&
+      other.padding == padding &&
+      other.extent == extent &&
+      other.center == center &&
+      other.minTop == minTop;
+
+  @override
+  int get hashCode => Object.hash(height, padding, extent, center, minTop);
 }

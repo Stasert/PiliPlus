@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
@@ -52,9 +51,7 @@ class _CommonSettingState extends State<CommonSetting> {
     return SimpleScaffold(
       appBar: showAppBar
           ? AppBar(
-              automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                context,
-              ),
+              automaticallyImplyLeading: true,
               title: Text(widget.settingType.title),
             )
           : null,

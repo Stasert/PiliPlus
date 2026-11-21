@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -80,7 +79,7 @@ class _UpowerRankPageState extends State<UpowerRankPage>
     if (widget.privilegeType == null) {
       return SimpleScaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+          automaticallyImplyLeading: true,
           title: Text('$_name的充电排行榜${_count == null ? '' : '($_count)'}'),
           actions: [
             TextButton(

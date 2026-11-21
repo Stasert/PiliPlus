@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 
 import 'dart:io' show Platform;
@@ -40,12 +39,12 @@ import 'package:PiliPlus/pages/member_video_web/season_series/view.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
-import 'package:PiliPlus/utils/extension/context_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -99,7 +98,11 @@ class _MemberPageState extends State<MemberPage> {
             key: _userController.scrollKey,
             scrollBehavior: const NoOverscrollIndicator(),
             pinnedHeaderSliverHeightBuilder: () =>
-                kToolbarHeight + MediaQuery.viewPaddingOf(context).top,
+                kToolbarHeight +
+                IOSNativeTabBar.appBarTop(
+                  context,
+                  safeTop: MediaQuery.viewPaddingOf(context).top,
+                ),
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               if (response != null) {
                 return [
@@ -130,9 +133,7 @@ class _MemberPageState extends State<MemberPage> {
               }
               return [
                 SliverAppBar(
-                  automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                    context,
-                  ),
+                  automaticallyImplyLeading: true,
                   pinned: true,
                   actions: _actions(theme),
                   title: GestureDetector(
@@ -194,7 +195,7 @@ class _MemberPageState extends State<MemberPage> {
       useSafeArea: true,
       isScrollControlled: true,
       constraints: BoxConstraints(
-        maxWidth: math.min(640, context.mediaQueryShortestSide),
+        maxWidth: math.min(640, MediaQuery.shortestSideOf(context)),
       ),
       builder: (context) {
         final scheme = ColorScheme.of(context);

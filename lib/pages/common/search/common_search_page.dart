@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/appbar/appbar.dart';
 import 'package:PiliPlus/common/widgets/flutter/pop_scope.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -57,8 +56,7 @@ abstract class CommonSearchPageState<S extends StatefulWidget, R, T>
 
   PreferredSizeWidget _buildBar(bool multiSelect) {
     final AppBar bar = AppBar(
-      automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-      titleSpacing: IOSNativeTabBar.hasNativeBack(context) ? 16 : null,
+      automaticallyImplyLeading: true,
       actions: [
         IconButton(
           tooltip: '搜索',

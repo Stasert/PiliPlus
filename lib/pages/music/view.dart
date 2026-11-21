@@ -1,7 +1,6 @@
 import 'package:PiliPlus/common/widgets/appbar/rail_floating_app_bar.dart';
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
 import 'package:PiliPlus/common/widgets/native_comment_button.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 
 import 'dart:io';
 import 'dart:math';
@@ -87,7 +86,7 @@ class _MusicDetailPageState extends CommonDynPageState<MusicDetailPage> {
   }
 
   PreferredSizeWidget _buildAppBar() => AppBar(
-    automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+    automaticallyImplyLeading: true,
     title: Padding(
       padding: const EdgeInsets.only(right: 12),
       child: Obx(() {

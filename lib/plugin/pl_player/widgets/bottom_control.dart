@@ -28,8 +28,8 @@ class BottomControl extends StatelessWidget {
   final PlPlayerController controller;
 
   /// Whether the buttons may extend into the left and right insets. The
-  /// progress bar always does: on iPhone Duo the inset is the vertical status
-  /// bar, whose camera is only at the top.
+  /// progress bar always does, and so do the buttons over iPhone Duo's
+  /// vertical status bar: its camera is only at the top.
   final bool removeSafeArea;
   final ValueGetter<Widget> buildBottomControl;
   final VideoDetailController videoDetailController;
@@ -157,7 +157,7 @@ class BottomControl extends StatelessWidget {
           if (removeSafeArea)
             buildBottomControl()
           else
-            ViewSafeArea(child: buildBottomControl()),
+            ViewSafeArea(overVerticalBar: true, child: buildBottomControl()),
         ],
       ),
     );

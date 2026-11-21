@@ -41,12 +41,12 @@ void main() {
     expect(find.byType(BackButton), findsOneWidget);
   });
 
-  testWidgets('竖状态栏里有返回键时，页面左上角不再显示，标题留出间距', (tester) async {
+  testWidgets('竖状态栏接管返回键后保留原有标题位置', (tester) async {
     IOSNativeTabBar.backAvailable.value = true;
     await tester.pumpWidget(app());
     await pushPage(tester);
     expect(find.byType(BackButton), findsNothing);
-    expect(titleLeft(tester), NavigationToolbar.kMiddleSpacing);
+    expect(titleLeft(tester), kToolbarHeight);
   });
 
   testWidgets('开合时跟着重建', (tester) async {
@@ -78,4 +78,121 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(BackButton), findsOneWidget);
   });
+  testWidgets(
+    'title and actions stay fixed with native back on/off, leadingWidth and RTL',
+    (tester) async {
+      for (final direction in [TextDirection.ltr, TextDirection.rtl]) {
+        for (final width in [56.0, 72.0]) {
+          final key = GlobalKey<NavigatorState>();
+          await tester.pumpWidget(
+            MaterialApp(
+              navigatorKey: key,
+              theme: ThemeData(appBarTheme: const AppBarTheme(titleSpacing: 0)),
+              builder: (_, child) => NativeBackScope(
+                child: Directionality(textDirection: direction, child: child!),
+              ),
+              home: const Scaffold(),
+            ),
+          );
+          key.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (context) => Scaffold(
+                appBar: AppBar(
+                  leadingWidth: width,
+                  title: const Text('Title'),
+                  actions: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.search),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final title = tester.getRect(find.text('Title'));
+          final action = tester.getRect(find.byIcon(Icons.search));
+          IOSNativeTabBar.backAvailable.value = true;
+          await tester.pump();
+          expect(find.byType(BackButton), findsNothing);
+          expect(tester.getRect(find.text('Title')), title);
+          expect(tester.getRect(find.byIcon(Icons.search)), action);
+          IOSNativeTabBar.backAvailable.value = false;
+          await tester.pumpWidget(const SizedBox());
+        }
+      }
+    },
+  );
+
+  testWidgets(
+    'deliberately leading-free toolbars stay leading-free',
+    (tester) async {
+      IOSNativeTabBar.backAvailable.value = true;
+      await tester.pumpWidget(app());
+      navigatorKey.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('二级页面'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(BackButton), findsNothing);
+      expect(titleLeft(tester), 0);
+    },
+  );
+
+  testWidgets(
+    'custom relocated controls retain width but have no hits or semantics',
+    (tester) async {
+      var tapped = 0;
+      final hidden = ValueNotifier(false);
+      addTearDown(hidden.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValueListenableBuilder(
+              valueListenable: hidden,
+              builder: (_, value, _) => Row(
+                children: [
+                  NativeBackSlot(
+                    hidden: value,
+                    child: SizedBox(
+                      width: 42,
+                      height: 34,
+                      child: IconButton(
+                        tooltip: '返回',
+                        onPressed: () => tapped++,
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                    ),
+                  ),
+                  const Text('neighbor'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      final point = tester.getCenter(find.byType(IconButton));
+      final neighbor = tester.getRect(find.text('neighbor'));
+      await tester.tapAt(point);
+      expect(tapped, 1);
+      hidden.value = true;
+      await tester.pump();
+      expect(tester.getRect(find.text('neighbor')), neighbor);
+      await tester.tapAt(point);
+      expect(tapped, 1);
+      expect(find.byTooltip('返回').hitTestable(), findsNothing);
+      expect(find.bySemanticsLabel('返回'), findsNothing);
+      hidden.value = false;
+      await tester.pump();
+      await tester.tapAt(point);
+      expect(tapped, 2);
+    },
+  );
 }

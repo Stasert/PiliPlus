@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/loading_widget.dart';
@@ -44,7 +43,7 @@ class _WhisperSettingsPageState extends State<WhisperSettingsPage> {
     final ThemeData theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: Obx(() => Text(_controller.title.value)),
       ),
       body: Obx(() => _buildBody(theme, _controller.loadingState.value)),

@@ -152,3 +152,6 @@ dist
 test*
 !/test/
 !/test/**
+
+# 本地 git worktree（见 CLAUDE.md）
+.claude/worktrees/

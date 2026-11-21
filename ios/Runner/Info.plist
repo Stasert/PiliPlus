@@ -132,7 +132,12 @@
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<key>NSLocalNetworkUsageDescription</key>
-		<string>需要访问本地网络以发现和连接 DLNA 投屏设备</string>
+		<string>需要访问本地网络以发现和连接 DLNA 投屏设备，以及通过 AirPlay 投屏高画质视频</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
 		<key>NSBonjourServices</key>
 		<array>
 			<string>_ssdp._udp</string>

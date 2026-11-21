@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -10,6 +9,7 @@ import 'package:PiliPlus/pages/common/page_order/page_order_btn_mixin.dart';
 import 'package:PiliPlus/pages/subscription_detail/controller.dart';
 import 'package:PiliPlus/pages/subscription_detail/widget/sub_video_card.dart';
 import 'package:PiliPlus/utils/grid.dart';
+import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/get.dart';
@@ -106,7 +106,7 @@ class _SubDetailPageState extends State<SubDetailPage>
     return Obx(() {
       return switch (controller.loadingState.value) {
         Loading() || Error() => SliverAppBar(
-          automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+          automaticallyImplyLeading: true,
         ),
         Success() => _buildAppBar(theme, padding, controller.subInfo!),
       };
@@ -148,7 +148,10 @@ class _SubDetailPageState extends State<SubDetailPage>
             ),
           ),
           padding: EdgeInsets.only(
-            top: kToolbarHeight + padding.top + 10,
+            top:
+                kToolbarHeight +
+                IOSNativeTabBar.appBarTop(context, safeTop: padding.top) +
+                10,
             left: 12 + padding.left,
             right: 12,
             bottom: 12,

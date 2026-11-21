@@ -9,6 +9,7 @@ import 'package:PiliPlus/pages/setting/widgets/ordered_multi_select_dialog.dart'
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/plugin/pl_player/models/audio_output_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
+import 'package:PiliPlus/plugin/pl_player/models/tone_mapping_type.dart';
 import 'package:PiliPlus/utils/filtering_text.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -53,8 +54,9 @@ Future<bool> _confirmSystemPlayerAll(BuildContext context, bool value) async {
         '· 直播和「听视频」仍使用内置播放器\n'
         '· 设备不支持 AV1 硬解时的 AV1 视频，以及部分已缓存的普通 HEVC 视频，仍使用内置播放器\n\n'
         '可能的后果\n'
-        '· 超分辨率不可用\n'
-        '· 「硬解模式」「缓冲大小」「缓冲时长」「视频同步」等内置播放器设置对这些视频不生效\n'
+        '· 开启超分辨率时改用内置播放器（HDR 视频除外）\n'
+        '· 倍速超过 2x（已缓存的视频为 3x）时改用内置播放器，HDR 视频和长按倍速则以此为上限\n'
+        '· 「硬解模式」「缓冲大小」「视频同步」等内置播放器设置对这些视频不生效\n'
         '· 系统播放器出错、加载超时或没有画面时，会自动切回内置播放器继续播放\n\n'
         '改动在下次打开视频时生效。',
       ),
@@ -62,11 +64,14 @@ Future<bool> _confirmSystemPlayerAll(BuildContext context, bool value) async {
   );
 }
 
+/// iOS: mpv's options, which the system player does not use.
+String get _mpvOnly => Platform.isIOS ? '。仅对内置播放器生效' : '';
+
 List<SettingsModel> get videoSettings => [
-  const SwitchModel(
+  SwitchModel(
     title: '开启硬解',
-    subtitle: '以较低功耗播放视频，若异常卡死请关闭',
-    leading: Icon(Icons.flash_on_outlined),
+    subtitle: '以较低功耗播放视频，若异常卡死请关闭$_mpvOnly',
+    leading: const Icon(Icons.flash_on_outlined),
     setKey: SettingBoxKey.enableHA,
     defaultVal: true,
   ),
@@ -83,11 +88,20 @@ List<SettingsModel> get videoSettings => [
     ),
     const SwitchModel(
       title: '所有视频均采用系统播放器',
-      subtitle: '实验性功能',
+      subtitle: '实验性功能，倍速超过 2x 时改用内置播放器',
       leading: Icon(Icons.smart_display_outlined),
       setKey: SettingBoxKey.systemPlayerAll,
       confirmChange: _confirmSystemPlayerAll,
       onChanged: _onSystemPlayerAllChanged,
+    ),
+    NormalModel(
+      title: '内置播放器 HDR 色调映射',
+      leading: const Icon(Icons.tonality_outlined),
+      getSubtitle: () {
+        final value = Pref.toneMapping;
+        return '当前：${value == .auto ? '自动' : value.name}（此项即mpv的--tone-mapping）。仅对内置播放器播放的 HDR 视频生效';
+      },
+      onTap: _showToneMappingDialog,
     ),
   ],
   const SwitchModel(
@@ -209,14 +223,15 @@ List<SettingsModel> get videoSettings => [
     title: '缓冲大小',
     leading: const Icon(Icons.storage_outlined),
     getSubtitle: () =>
-        '当前：${Pref.bufferSize}MB。点播视频的前向和后向缓冲区大小（此选项即mpv的--demuxer-max-bytes，--demuxer-max-back-bytes）。直播流请设置下方的直播缓冲大小',
+        '当前：${Pref.bufferSize}MB。点播视频的前向和后向缓冲区大小（此选项即mpv的--demuxer-max-bytes，--demuxer-max-back-bytes）。直播流请设置下方的直播缓冲大小$_mpvOnly',
     onTap: _showBufferSizeDialog,
   ),
   NormalModel(
     title: '缓冲时长',
     leading: const Icon(Icons.av_timer),
     getSubtitle: () =>
-        '当前：${Pref.bufferSec}s。点播视频的实际缓冲为大小与时长二者的最小值（此选项即mpv的--cache-secs）。直播流该选项无效，请设置下方的直播缓冲时长',
+        '当前：${Pref.bufferSec}s。点播视频的实际缓冲为大小与时长二者的最小值（此选项即mpv的--cache-secs）。直播流该选项无效，请设置下方的直播缓冲时长'
+        '${Platform.isIOS ? '。系统播放器只按时长缓冲，范围 30–60s' : ''}',
     onTap: _showBufferSecDialog,
   ),
   NormalModel(
@@ -236,19 +251,19 @@ List<SettingsModel> get videoSettings => [
   NormalModel(
     title: '自动同步',
     leading: const Icon(Icons.sync_rounded),
-    getSubtitle: () => '当前：${Pref.autosync}（此项即mpv的--autosync）',
+    getSubtitle: () => '当前：${Pref.autosync}（此项即mpv的--autosync）$_mpvOnly',
     onTap: _showAutoSyncDialog,
   ),
   NormalModel(
     title: '视频同步',
     leading: const Icon(Icons.view_timeline_outlined),
-    getSubtitle: () => '当前：${Pref.videoSync}（此项即mpv的--video-sync）',
+    getSubtitle: () => '当前：${Pref.videoSync}（此项即mpv的--video-sync）$_mpvOnly',
     onTap: _showVideoSyncDialog,
   ),
   NormalModel(
     title: '硬解模式',
     leading: const Icon(Icons.memory_outlined),
-    getSubtitle: () => '当前：${Pref.hardwareDecoding}（此项即mpv的--hwdec）',
+    getSubtitle: () => '当前：${Pref.hardwareDecoding}（此项即mpv的--hwdec）$_mpvOnly',
     onTap: _showHwDecDialog,
   ),
 ];
@@ -484,6 +499,24 @@ Future<void> _showAudioOutputDialog(
       SettingBoxKey.audioOutput,
       res.join(','),
     );
+    setState();
+  }
+}
+
+Future<void> _showToneMappingDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<ToneMappingType>(
+    context: context,
+    builder: (context) => SelectDialog<ToneMappingType>(
+      title: '内置播放器 HDR 色调映射',
+      value: Pref.toneMapping,
+      values: ToneMappingType.values.map((e) => (e, e.label)).toList(),
+    ),
+  );
+  if (res != null) {
+    await GStorage.setting.put(SettingBoxKey.toneMapping, res.name);
     setState();
   }
 }

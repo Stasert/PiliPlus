@@ -199,7 +199,7 @@ void main() {
   });
 
   testWidgets(
-    'route rail mask clears during entry and pop without changing content width',
+    'route background covers native tabs throughout entry and pop without changing content width',
     (tester) async {
       final nav = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
@@ -229,14 +229,14 @@ void main() {
             matching: find.byType(ColoredBox),
           )
           .first;
-      expect(tester.widget<ColoredBox>(mask).color, Colors.transparent);
+      expect(tester.widget<ColoredBox>(mask).color, isNot(Colors.transparent));
       expect(tester.getSize(find.byKey(const Key('route'))).width, 716);
       await tester.pumpAndSettle();
       expect(tester.widget<ColoredBox>(mask).color, isNot(Colors.transparent));
       nav.currentState!.pop();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
-      expect(tester.widget<ColoredBox>(mask).color, Colors.transparent);
+      expect(tester.widget<ColoredBox>(mask).color, isNot(Colors.transparent));
       expect(tester.getSize(find.byKey(const Key('route'))).width, 716);
       await tester.pumpAndSettle();
     },

@@ -1,4 +1,3 @@
-import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
@@ -12,6 +11,9 @@ abstract class CommonPageState<T extends StatefulWidget> extends State<T> {
   final _mainController = Get.find<MainController>();
 
   bool get needsCorrection => false;
+
+  /// Painted header height represented by the shared 0..topBarHeight offset.
+  double get scrollCorrectionExtent => _mainController.topBarExtent;
 
   @override
   void initState() {
@@ -58,7 +60,7 @@ abstract class CommonPageState<T extends StatefulWidget> extends State<T> {
     _barOffset!.value = clampDouble(
       _barOffset!.value + scrollDelta,
       0.0,
-      Style.topBarHeight,
+      _mainController.topBarExtent,
     );
   }
 
@@ -78,7 +80,7 @@ abstract class CommonPageState<T extends StatefulWidget> extends State<T> {
         final newValue = clampDouble(
           value + scrollDelta,
           0.0,
-          Style.topBarHeight,
+          _mainController.topBarExtent,
         );
         final offset = value - newValue;
         if (offset != 0) {
@@ -86,7 +88,9 @@ abstract class CommonPageState<T extends StatefulWidget> extends State<T> {
           if (pixel < 0.0 && scrollDelta < 0.0 && value > 0.0) {
             return false;
           }
-          Scrollable.of(notification.context!).position.correctBy(offset);
+          Scrollable.of(notification.context!).position.correctBy(
+            offset * scrollCorrectionExtent / _mainController.topBarExtent,
+          );
         }
       } else {
         _updateOffset(scrollDelta);

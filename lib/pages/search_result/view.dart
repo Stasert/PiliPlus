@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
@@ -67,8 +66,7 @@ class _SearchResultPageState extends State<SearchResultPage>
     final theme = Theme.of(context);
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
-        titleSpacing: IOSNativeTabBar.hasNativeBack(context) ? 16 : null,
+        automaticallyImplyLeading: true,
         shape: Border(
           bottom: BorderSide(
             color: theme.dividerColor.withValues(alpha: 0.08),

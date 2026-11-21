@@ -46,6 +46,15 @@ final class SystemPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     views[id]?.value?.playerLayer
   }
 
+  /// The screen the video is shown on (its window scene's), for the playback
+  /// info panel's EDR headroom.
+  static func screen(for id: Int) -> UIScreen? {
+    if let scene = views[id]?.value?.view().window?.windowScene { return scene.screen }
+    return UIApplication.shared.connectedScenes.lazy
+      .compactMap { $0 as? UIWindowScene }
+      .first { $0.activationState == .foregroundActive }?.screen
+  }
+
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink)
     -> FlutterError?
   {
@@ -95,7 +104,8 @@ final class SystemPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
       sessions[id]?.player.volume = Float(args["volume"] as? Double ?? 1)
       result(nil)
     case "info":
-      result(sessions[id]?.info() ?? [:])
+      guard let session = sessions[id] else { return result([String: Any]()) }
+      session.info(screen: Self.screen(for: id)) { result($0) }
     case "screenshot":
       guard let session = sessions[id] else { return result(nil) }
       session.screenshot { data in
@@ -106,8 +116,37 @@ final class SystemPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
       result(nil)
     case "supportsHardwareDecode":
       result(Self.supportsHardwareDecode(args["codec"] as? String ?? ""))
+    case "probe":
+      Self.probe(args) { result($0) }
     default:
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  /// A video track's codecs and range, read like `load` reads them but
+  /// without playing anything: one range request for the init section and
+  /// `sidx` online, the file head offline. mpv uses them to handle Dolby
+  /// Vision when this player does not play the video, and it waits for this
+  /// before opening it. nil on any error, or when it takes longer than 2
+  /// seconds.
+  static func probe(_ args: [String: Any], completion: @escaping ([String: Any]?) -> Void) {
+    guard let track = SystemPlayerSession.track(args["video"]) else { return completion(nil) }
+    let headers = args["headers"] as? [String: String] ?? [:]
+    let task = Task.detached { () async -> SystemPlayerHLS.TrackInfo? in
+      if track.url.isFileURL { return SystemPlayerHLS.info(head: SystemPlayerLocal.head(track.url)) }
+      return try? await SystemPlayerHLS.load(track, headers: headers).info
+    }
+    // Cancelling the task cancels its request too.
+    let timeout = DispatchWorkItem { task.cancel() }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: timeout)
+    Task { @MainActor in
+      let info = await task.value
+      timeout.cancel()
+      guard let info, let codecs = info.codecs else { return completion(nil) }
+      var m: [String: Any] = ["codecs": codecs]
+      m["supplementalCodecs"] = info.supplementalCodecs
+      m["videoRange"] = info.videoRange
+      completion(m)
     }
   }
 
@@ -135,6 +174,13 @@ final class SystemPlayerSession: NSObject {
   private var observations: [NSKeyValueObservation] = []
   private var itemObservers: [NSObjectProtocol] = []
   private var rate: Float = 1
+  /// Seconds to buffer ahead at 1x: the「缓冲时长」setting within 30–60 s. At
+  /// least what this player always used: mpv buffers the smaller of that
+  /// duration and「缓冲大小」(4 MB by default, about 1.5 s of 4K HDR), so
+  /// copying mpv's buffer would make AVPlayer stall more, not less. At most
+  /// 60 s, as nothing limits the size here: a long duration set for mpv would
+  /// have AVPlayer hold minutes of 4K HDR (about 2.75 MB a second).
+  private var bufferSec: Double = 30
   private var loadTask: Task<Void, Never>?
   private var lastPlaying: Bool?
   private var lastBuffering: Bool?
@@ -168,11 +214,21 @@ final class SystemPlayerSession: NSObject {
 
   func load(_ args: [String: Any], completion: @escaping (String?) -> Void) {
     loadTask?.cancel()
+    // Describes the replaced item no longer. When this load fails, mpv takes
+    // over and reads Dolby Vision details from `info`: they must not be the
+    // previous video's.
+    videoInfo = nil
+    audioInfo = nil
+    videoURL = nil
+    audioURL = nil
+    frameRate = nil
     guard let video = Self.track(args["video"]) else { return completion("bad video") }
     let audio = Self.track(args["audio"])
     let headers = args["headers"] as? [String: String] ?? [:]
     let frameRate = args["frameRate"] as? Double
     let startMs = args["startMs"] as? Int ?? 0
+    let requestedBuffer = args["bufferSec"] as? Double ?? 0
+    let bufferSec = requestedBuffer.isFinite ? min(max(30, requestedBuffer), 60) : 30
     loadTask = Task { @MainActor in
       do {
         let asset: AVAsset
@@ -188,15 +244,18 @@ final class SystemPlayerSession: NSObject {
             try await SystemPlayerPlaylistLoader.makeAsset(
               video: video, audio: audio, frameRate: frameRate, headers: headers)
         }
-        if Task.isCancelled { return }
+        // Superseded by another load, or the page closed while loading. The
+        // Dart side still waits for this result, so always answer it.
+        if Task.isCancelled { return completion(SystemPlayerSession.cancelled) }
         self.loader = loader
         self.videoInfo = videoInfo
         self.audioInfo = audioInfo
         self.videoURL = video.url
         self.audioURL = audio?.url
         self.frameRate = frameRate
+        self.bufferSec = bufferSec
         let item = AVPlayerItem(asset: asset)
-        item.preferredForwardBufferDuration = 30
+        item.preferredForwardBufferDuration = self.forwardBuffer
         self.observe(item)
         self.player.replaceCurrentItem(with: item)
         self.startWatchdog(item)
@@ -204,6 +263,13 @@ final class SystemPlayerSession: NSObject {
           await self.player.seek(
             to: CMTime(value: CMTimeValue(startMs), timescale: 1000),
             toleranceBefore: .zero, toleranceAfter: .zero)
+        }
+        // A newer load may have started during the seek; it owns the player now.
+        if Task.isCancelled { return completion(SystemPlayerSession.cancelled) }
+        // The Dart side ignores error events until this load has answered, so
+        // report an item that already failed here.
+        if item.status == .failed {
+          return completion(Self.describe(item.error, item: item))
         }
         completion(nil)
       } catch {
@@ -238,7 +304,8 @@ final class SystemPlayerSession: NSObject {
     return String((parts.isEmpty ? "unknown" : parts.joined(separator: " · ")).prefix(160))
   }
 
-  private static func track(_ value: Any?) -> DashTrack? {
+  /// Also used by `probe` and for AirPlay casting (AirPlayPlugin).
+  static func track(_ value: Any?) -> DashTrack? {
     guard let map = value as? [String: Any], let s = map["url"] as? String,
       let url = URL(string: s)
     else { return nil }
@@ -271,6 +338,15 @@ final class SystemPlayerSession: NSObject {
             self?.emit("size", ["width": Int(s.width), "height": Int(s.height)])
           }
         }
+      })
+    // Every ready item plays at up to 2x; faster only when this is true.
+    // File-based items (downloads) turn it on once ready. Our HLS playlists
+    // have no I-frame playlist, so they never do: above 2x AVPlayer then
+    // pauses, seeks and plays in turn, and shows "loading" all the time.
+    observations.append(
+      item.observe(\.canPlayFastForward, options: [.initial, .new]) { [weak self] item, _ in
+        let value = item.canPlayFastForward
+        DispatchQueue.main.async { self?.emit("fastForward", ["value": value]) }
       })
     let center = NotificationCenter.default
     itemObservers.append(
@@ -352,13 +428,22 @@ final class SystemPlayerSession: NSObject {
       of: image, format: .RGBA8, colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!)
   }
 
-  /// What the playback info panel shows while this player is in use.
-  func info() -> [String: Any] {
+  /// What the playback info panel shows while this player is in use. Values
+  /// that cannot be read are left out.
+  func info(screen: UIScreen?, completion: @escaping ([String: Any]) -> Void) {
     var m: [String: Any] = [
       "rate": Double(player.rate),
       "volume": Double(player.volume),
+      // Whether the device and screen can show HDR at all, not whether this
+      // video is HDR.
       "eligibleForHDR": AVPlayer.eligibleForHDRPlayback,
     ]
+    // Above 1 while the screen really shows HDR (EDR) content; 1 e.g. in
+    // Low Power Mode.
+    if #available(iOS 16.0, *), let screen {
+      m["edrHeadroom"] = Double(screen.currentEDRHeadroom)
+      m["potentialEdrHeadroom"] = Double(screen.potentialEDRHeadroom)
+    }
     if let v = videoInfo {
       m["videoCodecs"] = v.codecs
       m["supplementalCodecs"] = v.supplementalCodecs
@@ -370,23 +455,99 @@ final class SystemPlayerSession: NSObject {
     m["videoUrl"] = videoURL?.absoluteString
     m["audioUrl"] = audioURL?.absoluteString
     m["frameRate"] = frameRate
-    guard let item = player.currentItem else { return m }
+    guard let item = player.currentItem else { return completion(m) }
     let size = item.presentationSize
     if size.width > 0 {
       m["width"] = Int(size.width)
       m["height"] = Int(size.height)
     }
-    if let track = item.tracks.first(where: { $0.assetTrack?.mediaType == .video }),
-      track.currentVideoFrameRate > 0
-    {
+    let videoTrack = item.tracks.first { $0.assetTrack?.mediaType == .video }
+    if let track = videoTrack, track.currentVideoFrameRate > 0 {
       m["currentFrameRate"] = Double(track.currentVideoFrameRate)
     }
     if let event = item.accessLog()?.events.last {
       m["indicatedBitrate"] = event.indicatedBitrate
       m["observedBitrate"] = event.observedBitrate
+      m["averageVideoBitrate"] = event.averageVideoBitrate
       m["droppedFrames"] = event.numberOfDroppedVideoFrames
+      m["stalls"] = event.numberOfStalls
+      m["startupTime"] = event.startupTime
+    }
+    guard let assetTrack = videoTrack?.assetTrack else { return completion(m) }
+    let base = m
+    var answered = false
+    func answer(_ format: [String: Any]) {
+      if answered { return }
+      answered = true
+      completion(base.merging(format) { _, new in new })
+    }
+    // Read asynchronously; the panel opens without it if that takes long.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { answer([:]) }
+    Self.loadFormat(of: assetTrack, completion: answer)
+  }
+
+  /// The video track's format as handed to the decoder, read from the
+  /// stream rather than what the playlist declares.
+  private static func loadFormat(
+    of track: AVAssetTrack, completion: @escaping ([String: Any]) -> Void
+  ) {
+    if #available(iOS 15.0, *) {
+      Task { @MainActor in
+        let formats = (try? await track.load(.formatDescriptions)) ?? []
+        var m = formats.first.map(Self.describe(format:)) ?? [:]
+        if let characteristics = try? await track.load(.mediaCharacteristics) {
+          m["containsHDRVideo"] = characteristics.contains(.containsHDRVideo)
+        }
+        completion(m)
+      }
+    } else {
+      let format = track.formatDescriptions.first.flatMap { value -> CMFormatDescription? in
+        let object = value as AnyObject
+        guard CFGetTypeID(object) == CMFormatDescriptionGetTypeID() else { return nil }
+        return (object as! CMFormatDescription)
+      }
+      var m = format.map(Self.describe(format:)) ?? [:]
+      m["containsHDRVideo"] = track.hasMediaCharacteristic(.containsHDRVideo)
+      completion(m)
+    }
+  }
+
+  private static func describe(format: CMFormatDescription) -> [String: Any] {
+    func ext(_ key: CFString) -> CFPropertyList? {
+      CMFormatDescriptionGetExtension(format, extensionKey: key)
+    }
+    var m: [String: Any] = [
+      "formatSubtype": fourCC(CMFormatDescriptionGetMediaSubType(format)),
+      "masteringDisplay": ext(kCMFormatDescriptionExtension_MasteringDisplayColorVolume) != nil,
+      "contentLightLevel": ext(kCMFormatDescriptionExtension_ContentLightLevelInfo) != nil,
+    ]
+    m["transferFunction"] = ext(kCMFormatDescriptionExtension_TransferFunction) as? String
+    m["colorPrimaries"] = ext(kCMFormatDescriptionExtension_ColorPrimaries) as? String
+    m["yCbCrMatrix"] = ext(kCMFormatDescriptionExtension_YCbCrMatrix) as? String
+    if #available(iOS 15.0, *) {
+      m["bitsPerComponent"] =
+        (ext(kCMFormatDescriptionExtension_BitsPerComponent) as? NSNumber)?.intValue
+    }
+    // Dolby Vision configuration boxes kept from the sample entry ("" when
+    // there are none).
+    if let atoms = ext(kCMFormatDescriptionExtension_SampleDescriptionExtensionAtoms)
+      as? [String: Any]
+    {
+      m["dolbyVisionConfig"] =
+        ["dvcC", "dvvC", "dvwC"].filter { atoms[$0] != nil }.joined(separator: ",")
     }
     return m
+  }
+
+  /// e.g. "hvc1", "dvh1", "avc1", "av01".
+  private static func fourCC(_ code: FourCharCode) -> String {
+    let bytes = [24, 16, 8, 0].map { UInt8(truncatingIfNeeded: code >> $0) }
+    if bytes.allSatisfy({ $0 >= 0x20 && $0 < 0x7f }),
+      let s = String(bytes: bytes, encoding: .ascii)
+    {
+      return s
+    }
+    return String(code)
   }
 
   func play() {
@@ -400,7 +561,14 @@ final class SystemPlayerSession: NSObject {
     self.rate = rate
     if #available(iOS 16.0, *) { player.defaultRate = rate }
     if player.rate != 0 { player.rate = rate }
+    player.currentItem?.preferredForwardBufferDuration = forwardBuffer
   }
+
+  /// Scaled by the speed, like mpv's cache-secs, so it covers as much
+  /// playing time at 2x as at 1x. At most 120 s, which only cuts it above
+  /// 2x, i.e. for downloads, read from disk. Only a hint: AVPlayer may
+  /// buffer less.
+  private var forwardBuffer: TimeInterval { min(bufferSec * Double(max(1, rate)), 120) }
 
   func seek(ms: Int, completion: @escaping () -> Void) {
     player.seek(

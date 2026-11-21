@@ -45,7 +45,9 @@ abstract final class Update {
           ((data['assets'] as List?) ?? const []).any(
             (e) => (e['name'] as String).contains(hash.substring(0, 9)),
           );
-      if (sameBuild || BuildConfig.buildTime >= latest) {
+      if (!_hasInstaller(data['assets']) ||
+          sameBuild ||
+          BuildConfig.buildTime >= latest) {
         if (!isAuto) {
           SmartDialog.showToast('已是最新版本');
         }
@@ -123,9 +125,24 @@ abstract final class Update {
     }
   }
 
+  /// 本维护版的 Release 只有 iOS 安装包（[Api.latestApp] 对所有平台都指向
+  /// 这里）。附件里没有当前系统能用的安装包时不提示更新，当作已是最新。
+  static bool _hasInstaller(Object? assets) {
+    if (assets is! List) return false;
+    return assets.any((e) {
+      final name = e is Map ? e['name'] : null;
+      if (name is! String || name.endsWith('.sha256')) return false;
+      if (Platform.isIOS) return name.contains('ios') && name.endsWith('.ipa');
+      if (Platform.isAndroid) return name.endsWith('.apk');
+      return name.contains(Platform.operatingSystem);
+    });
+  }
+
   // 下载适用于当前系统的安装包
   static Future<void> onDownload(Map data, {String? ext}) async {
     SmartDialog.dismiss();
+    // iOS 的附件里还有同名的 .ipa.sha256 校验文件，只认 IPA
+    if (Platform.isIOS) ext ??= '.ipa';
     try {
       void download(String plat) {
         if (data['assets'].isNotEmpty) {

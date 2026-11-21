@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/rail_page_view.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 
 import 'dart:math';
@@ -221,8 +220,7 @@ class _PgcPageState extends State<PgcPage> with AutomaticKeepAliveClientMixin {
                   () => Builder(
                     builder: (context) => SimpleScaffold(
                       appBar: AppBar(
-                        automaticallyImplyLeading:
-                            !IOSNativeTabBar.hasNativeBack(context),
+                        automaticallyImplyLeading: true,
                         title: const Text('索引'),
                       ),
                       body: DefaultTabController(

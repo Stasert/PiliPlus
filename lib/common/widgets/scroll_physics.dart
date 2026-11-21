@@ -8,10 +8,14 @@ Widget tabBarView({
   required List<Widget> children,
   TabController? controller,
   HitTestBehavior hitTestBehavior = .opaque,
+  double leadingPanelWidth = 0,
+  double trailingPanelWidth = 0,
 }) => RailTabBarView(
   controller: controller,
   physics: tabBarScrollPhysics,
   hitTestBehavior: hitTestBehavior,
+  leadingPanelWidth: leadingPanelWidth,
+  trailingPanelWidth: trailingPanelWidth,
   horizontalDragGestureRecognizer: CustomHorizontalDragGestureRecognizer.new,
   children: children,
 );

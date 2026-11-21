@@ -1,5 +1,4 @@
 import 'package:PiliPlus/models/common/dynamic/dynamic_badge_mode.dart';
-import 'package:PiliPlus/utils/extension/string_ext.dart';
 
 /// 竖状态栏顶部（Wi-Fi 图标下面）的按钮，iPhone Duo 的一级页面显示；二级页面
 /// 的同一位置显示返回键
@@ -55,27 +54,13 @@ class NativeTabTool {
       'NativeTabTool($id, $group, $title, $symbol, $badge, $image)';
 }
 
-/// 从上到下：头像，然后是搜索和私信合在一起的一组。私信只在登录后显示，角标
-/// 和首页顶部的消息按钮一致。头像只要本机存有账号就点了弹出账号切换，包括在
-/// 账号切换里选了匿名（[hasAccount] 为 true、[loggedIn] 为 false）的时候，这样
-/// 能切回原来的账号；一个账号都没有时点了去「我的」页面登录。没登录（含匿名）
-/// 时头像显示为人形图标
+/// 一级页面仅保留搜索和私信，统一在同一个玻璃按钮组中。
+/// 私信只在登录后显示，角标和首页消息设置保持一致；账号入口保留在「我的」。
 List<NativeTabTool> nativeTabTools({
   required bool loggedIn,
-  required bool hasAccount,
   required String? unread,
   required DynamicBadgeMode badgeMode,
-  required String face,
 }) => [
-  NativeTabTool(
-    id: 'mine',
-    group: 'account',
-    title: loggedIn || hasAccount ? '切换账号' : '点击登录',
-    symbol: 'person.crop.circle',
-    image: loggedIn && face.isNotEmpty
-        ? '${face.http2https}@120w_120h.webp'
-        : null,
-  ),
   const NativeTabTool(
     id: 'search',
     group: 'actions',

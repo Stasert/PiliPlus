@@ -109,7 +109,7 @@ class _FullScreenScState extends State<FullScreenSc> {
   Widget build(BuildContext context) {
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: Row(
           children: [
             const Text('全屏 SuperChat 设置'),

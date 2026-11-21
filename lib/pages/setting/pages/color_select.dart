@@ -1,5 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
-
 import 'dart:io' show Platform;
 
 import 'package:PiliPlus/common/skeleton/video_card_h.dart';
@@ -84,7 +82,7 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
         .copyWith(top: 0, bottom: 0);
     return SimpleScaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+        automaticallyImplyLeading: true,
         title: const Text('选择应用主题'),
       ),
       body: ListView(

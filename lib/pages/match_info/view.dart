@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/native_comment_button.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
@@ -38,7 +37,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
     return fabAnimWrapper(
       child: SimpleScaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+          automaticallyImplyLeading: true,
           title: const Text('比赛详情'),
         ),
         body: ViewSafeArea(
@@ -81,7 +80,7 @@ class _MatchInfoPageState extends CommonDynPageState<MatchInfoPage> {
       () => Builder(
         builder: (context) => SimpleScaffold(
           appBar: AppBar(
-            automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+            automaticallyImplyLeading: true,
             title: const Text('评论详情'),
             shape: Border(
               bottom: BorderSide(

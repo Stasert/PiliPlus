@@ -82,6 +82,74 @@ void main() {
     });
   });
 
+  test(
+    'scroll item remains registered while hidden and cannot be invoked',
+    () async {
+      final page = Object();
+      late Map<String, Object> state;
+      final taps = <String>[];
+      final registry = NativePageActionRegistry(onChanged: (v) => state = v)
+        ..setTopPage(page, backOnly: true)
+        ..register(
+          page: page,
+          actions: const [
+            NativePageAction(id: 'scrollToTop', title: '回顶', visible: false),
+            NativePageAction(id: 'comment', title: '评论', count: '8'),
+          ],
+          handler: taps.add,
+        );
+      final owner = state['owner'] as int;
+      expect(state['backOnly'], true);
+      expect((state['items'] as List).length, 2);
+      expect(((state['items'] as List).first as Map)['hidden'], true);
+      await registry.handle(owner: owner, id: 'scrollToTop');
+      expect(taps, isEmpty);
+      registry.register(
+        page: page,
+        actions: const [
+          NativePageAction(id: 'scrollToTop', title: '回顶'),
+          NativePageAction(id: 'comment', title: '评论', count: '8'),
+        ],
+        handler: taps.add,
+      );
+      expect(state['owner'], owner);
+      expect(state['backOnly'], true);
+      await registry.handle(owner: owner, id: 'scrollToTop');
+      expect(taps, ['scrollToTop']);
+      registry.setTopPage(Object());
+      expect(state['backOnly'], true);
+    },
+  );
+
+  test(
+    'only an explicit video detail opts into Home and pop restores policy',
+    () {
+      final settings = Object(), video = Object(), comments = Object();
+      late Map<String, Object> state;
+      final registry = NativePageActionRegistry(onChanged: (v) => state = v)
+        ..setTopPage(settings);
+      expect(state['backOnly'], true);
+      registry.setTopPage(
+        video,
+        backOnly: false,
+        initialVideo: const NativeVideoChrome(
+          controlsVisible: false,
+          fullScreen: false,
+          locked: false,
+        ),
+      );
+      expect(state['backOnly'], false);
+      expect(state['video'], isA<Map<String, Object>>());
+      registry.setTopPage(comments);
+      expect(state['backOnly'], true);
+      expect(state['video'], false);
+      registry.setTopPage(video, backOnly: false);
+      expect(state['backOnly'], false);
+      registry.setTopPage(settings);
+      expect(state['backOnly'], true);
+    },
+  );
+
   group('NativeNavigationBatch', () {
     test('sends the last value once per flush and skips repeats', () {
       void Function()? pending;

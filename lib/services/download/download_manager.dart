@@ -184,9 +184,21 @@ class DownloadManager {
 
     onReceiveProgress?.call(received, total);
 
+    // 写入出错（例如存储空间满）时 add() 不会报错，只会让 sink.done 失败，
+    // 之后写入的数据都被丢掉。先记下来，下一块数据到达时就停止下载，
+    // 不再白白把整个响应读完
+    Object? writeError;
+    sink.done.then<void>(
+      (_) {},
+      onError: (Object e) {
+        writeError = e;
+      },
+    );
+
     int? last;
     try {
       await for (final chunk in data.stream.timeout(idleTimeout)) {
+        if (writeError != null) break;
         sink.add(chunk);
         received += chunk.length;
         final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -195,17 +207,29 @@ class DownloadManager {
           onReceiveProgress?.call(received, total);
         }
       }
-    } finally {
+    } catch (_) {
+      // 已经有异常在往外抛，关闭时的错误就不管了
       try {
         await sink.close();
       } catch (_) {}
+      rethrow;
     }
+    // 数据流正常结束：写入错误只会在这里报出来，要往外抛（FileSystemException
+    // 属于 IOException，会走续传，次数用完后标为失败），不能当成下载完成
+    await sink.close();
 
     if (_isCancelled) {
       throw _cancelError;
     }
-    if (total >= 0 && received != total) {
-      throw IncompleteDownloadException(received, total);
+    if (total >= 0) {
+      if (received != total) {
+        throw IncompleteDownloadException(received, total);
+      }
+      // received 只是收到的网络字节数，再核对一次实际写进文件的大小
+      final length = await file.length();
+      if (length != total) {
+        throw IncompleteDownloadException(length, total);
+      }
     }
     onReceiveProgress?.call(received, total);
   }

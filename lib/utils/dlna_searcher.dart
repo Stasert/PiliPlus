@@ -298,10 +298,28 @@ class DlnaSearcher {
       );
 
   /// Cellular, VPN and peer-to-peer interfaces never have TVs on them; iOS
-  /// cellular addresses are often in 10.0.0.0/8 too, so filter by name.
+  /// and Android cellular addresses are often in 10.0.0.0/8 too, so filter by
+  /// name. Android: rmnet* / rev_rmnet* / r_rmnet* (Qualcomm), ccmni*
+  /// (MediaTek), seth_lte* (Unisoc), v4-* and clat* (464XLAT), ppp*, ip6tnl*.
   @visibleForTesting
   static bool isLanInterfaceName(String name) {
-    const skipped = ['pdp_ip', 'utun', 'ipsec', 'awdl', 'llw', 'rmnet', 'tun'];
+    const skipped = [
+      'pdp_ip',
+      'utun',
+      'ipsec',
+      'awdl',
+      'llw',
+      'rmnet',
+      'rev_rmnet',
+      'r_rmnet',
+      'ccmni',
+      'seth_lte',
+      'v4-',
+      'clat',
+      'ppp',
+      'ip6tnl',
+      'tun',
+    ];
     return !skipped.any(name.startsWith);
   }
 

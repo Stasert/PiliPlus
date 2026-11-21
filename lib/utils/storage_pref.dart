@@ -38,6 +38,7 @@ import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/plugin/pl_player/models/tone_mapping_type.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
@@ -843,6 +844,13 @@ abstract final class Pref {
   /// iOS, experimental: play every on-demand video with the system player.
   static bool get systemPlayerAll =>
       _setting.get(SettingBoxKey.systemPlayerAll, defaultValue: false);
+
+  /// iOS: mpv's tone mapping for the HDR videos it plays.
+  static ToneMappingType get toneMapping =>
+      ToneMappingType.values.asNameMap()[_setting.get(
+        SettingBoxKey.toneMapping,
+      )] ??
+      ToneMappingType.auto;
 
   static Set<int> get danmakuBlockType => Set<int>.from(
     _setting.get(SettingBoxKey.danmakuBlockType, defaultValue: const <int>{}),

@@ -20,6 +20,16 @@ double homeTopSpacing(
     ? spacing / 2
     : spacing;
 
+/// The normalized rail inset belongs inside the collapsible home header.
+/// Keeping it outside the page also clips the feed below it after collapse.
+double homePageTopSpacing(
+  double spacing,
+  HomeToolsPlacement placement, {
+  bool alreadyNormalized = false,
+}) => placement == HomeToolsPlacement.rightRail && alreadyNormalized
+    ? 0
+    : homeTopSpacing(spacing, placement, alreadyNormalized: alreadyNormalized);
+
 /// A covered route's hidden buttons do not revoke its native tool placement.
 class HomeToolsAvailability extends ValueNotifier<bool> {
   HomeToolsAvailability() : super(false);

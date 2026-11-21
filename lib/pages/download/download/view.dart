@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 
 import 'dart:async';
@@ -175,9 +174,7 @@ class _DownloadPageState extends State<DownloadPage>
             ctr: _controller,
             actions: [updateBtn()],
             child: AppBar(
-              automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(
-                context,
-              ),
+              automaticallyImplyLeading: true,
               title: const Text('离线缓存'),
               actions: [
                 IconButton(

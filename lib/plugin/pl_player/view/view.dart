@@ -52,7 +52,7 @@ import 'package:PiliPlus/plugin/pl_player/widgets/common_btn.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/forward_seek.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/mpv_convert_webp.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/play_pause_btn.dart';
-import 'package:PiliPlus/plugin/pl_player/widgets/system_player_video.dart';
+import 'package:PiliPlus/plugin/pl_player/widgets/player_video_surface.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/system_subtitle_view.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
@@ -127,7 +127,6 @@ class PLVideoPlayer extends StatefulWidget {
 class _PLVideoPlayerState extends State<PLVideoPlayer>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late AnimationController _animationController;
-  late VideoController videoController;
   late final CommonIntroController introController = widget.introController!;
   PgcIntroController get pgcController => introController as PgcIntroController;
   UgcIntroController get ugcController => introController as UgcIntroController;
@@ -266,7 +265,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    videoController = plPlayerController.videoController!;
 
     if (PlatformUtils.isMobile) {
       Future.microtask(() {
@@ -506,7 +504,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              type.label,
+              plPlayerController.superResolutionUnsupported
+                  ? '不支持'
+                  : type.label,
               style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           ),
@@ -703,13 +703,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           initialValue: plPlayerController.playbackSpeed,
           color: Colors.black.withValues(alpha: 0.8),
           itemBuilder: (context) {
-            return plPlayerController.speedList
+            return plPlayerController.speedOptions
                 .map(
                   (double speed) => PopupMenuItem<double>(
                     height: 35,
                     padding: const EdgeInsets.only(left: 30),
                     value: speed,
-                    onTap: () => plPlayerController.setPlaybackSpeed(speed),
+                    onTap: () => plPlayerController.setPlaybackSpeed(
+                      speed,
+                      fromMenu: true,
+                    ),
                     child: Text(
                       "${speed}X",
                       style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -1298,21 +1301,25 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               child: Obx(
                 // AVPlayer does not feed media_kit's subtitle stream, so the
                 // system player's subtitles are timed in Flutter.
-                () => plPlayerController.usingSystemPlayer.value
-                    ? SystemSubtitleView(
-                        text: plPlayerController.systemSubtitle,
-                        configuration: plPlayerController.subtitleConfig.value,
-                        enableDragSubtitle:
-                            plPlayerController.enableDragSubtitle,
-                        onUpdatePadding: plPlayerController.onUpdatePadding,
-                      )
-                    : SubtitleView(
-                        controller: videoController,
-                        configuration: plPlayerController.subtitleConfig.value,
-                        enableDragSubtitle:
-                            plPlayerController.enableDragSubtitle,
-                        onUpdatePadding: plPlayerController.onUpdatePadding,
-                      ),
+                () {
+                  if (plPlayerController.usingSystemPlayer.value) {
+                    return SystemSubtitleView(
+                      text: plPlayerController.systemSubtitle,
+                      configuration: plPlayerController.subtitleConfig.value,
+                      enableDragSubtitle: plPlayerController.enableDragSubtitle,
+                      onUpdatePadding: plPlayerController.onUpdatePadding,
+                    );
+                  }
+                  final controller = plPlayerController.videoController;
+                  if (controller == null) return const SizedBox.shrink();
+                  return SubtitleView(
+                    key: ObjectKey(controller),
+                    controller: controller,
+                    configuration: plPlayerController.subtitleConfig.value,
+                    enableDragSubtitle: plPlayerController.enableDragSubtitle,
+                    onUpdatePadding: plPlayerController.onUpdatePadding,
+                  );
+                },
               ),
             ),
           ),
@@ -1354,7 +1361,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                       ),
                       child: Obx(
                         () => Text(
-                          '${plPlayerController.enableAutoLongPressSpeed ? (plPlayerController.longPressStatus.value ? plPlayerController.lastPlaybackSpeed : plPlayerController.playbackSpeed) * 2 : plPlayerController.longPressSpeed}倍速中',
+                          '${plPlayerController.longPressDisplaySpeed}倍速中',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
@@ -1734,9 +1741,12 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         if (isFullScreen || plPlayerController.isDesktopPip) ...[
           // 锁
           if (plPlayerController.showFsLockBtn)
+            // 和进度条一样铺到竖状态栏上：iPhone Duo 合上时摄像头只在
+            // 竖栏一端，挡不到中间的按钮
             ViewSafeArea(
               right: false,
               left: !plPlayerController.removeSafeArea,
+              overVerticalBar: true,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionalTranslation(
@@ -1781,6 +1791,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             ViewSafeArea(
               left: false,
               right: !plPlayerController.removeSafeArea,
+              // 同上，竖栏在右边时截图按钮也铺上去
+              overVerticalBar: true,
               child: Obx(
                 () => Align(
                   alignment: Alignment.centerRight,
@@ -1982,18 +1994,15 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 child: FittedBox(
                   fit: videoFit.boxFit,
                   alignment: widget.alignment,
-                  child: plPlayerController.usingSystemPlayer.value
-                      ? SystemPlayerVideo(
-                          player: plPlayerController.systemPlayer!,
-                          width: plPlayerController.width,
-                          height: plPlayerController.height,
-                          aspectRatio: videoFit.aspectRatio,
-                        )
-                      : SimpleVideo(
-                          controller: plPlayerController.videoController!,
-                          fill: widget.fill,
-                          aspectRatio: videoFit.aspectRatio,
-                        ),
+                  child: PlayerVideoSurface(
+                    systemActive: plPlayerController.usingSystemPlayer.value,
+                    systemPlayer: plPlayerController.systemPlayer,
+                    videoController: plPlayerController.videoController,
+                    width: plPlayerController.width,
+                    height: plPlayerController.height,
+                    fill: widget.fill,
+                    aspectRatio: videoFit.aspectRatio,
+                  ),
                 ),
               );
             }),

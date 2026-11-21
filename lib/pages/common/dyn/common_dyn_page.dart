@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/native_comment_button.dart';
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/skeleton/video_reply.dart';
 import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
@@ -283,7 +282,7 @@ mixin CommonDynPageMixin<T extends StatefulWidget>
       if (showBackBtn) {
         return SimpleScaffold(
           appBar: AppBar(
-            automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+            automaticallyImplyLeading: true,
             title: const Text('评论详情'),
             shape: Border(
               bottom: BorderSide(

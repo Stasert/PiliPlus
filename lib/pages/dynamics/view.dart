@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
@@ -22,6 +24,7 @@ class DynamicsPage extends StatefulWidget {
 
 class _DynamicsPageState extends CommonPageState<DynamicsPage>
     with AutomaticKeepAliveClientMixin {
+  static const _upPanelWidth = 64.0;
   final _dynamicsController = Get.putOrFind(DynamicsController.new);
   UpPanelPosition get upPanelPosition => _dynamicsController.upPanelPosition;
   late final MainController _mainController = Get.find<MainController>();
@@ -58,7 +61,7 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
       type: needBg ? .canvas : .transparency,
       color: needBg ? colorScheme.surface : null,
       child: SizedBox(
-        width: isTop ? null : 64,
+        width: isTop ? null : _upPanelWidth,
         height: isTop ? 76 : null,
         child: NotificationListener<ScrollEndNotification>(
           onNotification: (notification) {
@@ -125,6 +128,8 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
 
     Widget child = tabBarView(
       controller: _dynamicsController.tabController,
+      leadingPanelWidth: upPanelPosition == .leftFixed ? _upPanelWidth : 0,
+      trailingPanelWidth: upPanelPosition == .rightFixed ? _upPanelWidth : 0,
       children: DynamicsTabType.values
           .map((e) => DynamicsTabPage(dynamicsType: e))
           .toList(),
@@ -165,46 +170,67 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
         actions = const EndDrawerButton();
     }
 
-    return Scaffold(
-      primary: false,
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.transparent,
-      appBar: PreferredSize(
-        preferredSize: const .fromHeight(50),
-        child: Row(
-          children: [
-            ?leading,
-            Expanded(
-              child: TabBar(
-                dividerHeight: 0,
-                isScrollable: true,
-                tabAlignment: .start,
-                dividerColor: Colors.transparent,
-                labelColor: colorScheme.primary,
-                indicatorColor: colorScheme.primary,
-                controller: _dynamicsController.tabController,
-                unselectedLabelColor: colorScheme.onSurface,
-                labelStyle:
-                    TabBarTheme.of(context).labelStyle
-                        ?.copyWith(fontSize: 13) ??
-                    const TextStyle(fontSize: 13),
-                tabs: DynamicsTabType.values
-                    .map((e) => Tab(text: e.label))
-                    .toList(),
-                onTap: (index) {
-                  if (!_dynamicsController.tabController.indexIsChanging) {
-                    _dynamicsController.animateToTop();
-                  }
-                },
+    final tabRow = Row(
+      children: [
+        ?leading,
+        Expanded(
+          child: TabBar(
+            dividerHeight: 0,
+            isScrollable: true,
+            tabAlignment: .start,
+            dividerColor: Colors.transparent,
+            labelColor: colorScheme.primary,
+            indicatorColor: colorScheme.primary,
+            controller: _dynamicsController.tabController,
+            unselectedLabelColor: colorScheme.onSurface,
+            labelStyle:
+                TabBarTheme.of(context).labelStyle?.copyWith(fontSize: 13) ??
+                const TextStyle(fontSize: 13),
+            tabs: DynamicsTabType.values
+                .map((e) => Tab(text: e.label))
+                .toList(),
+            onTap: (index) {
+              if (!_dynamicsController.tabController.indexIsChanging) {
+                _dynamicsController.animateToTop();
+              }
+            },
+          ),
+        ),
+        actions,
+      ],
+    );
+    // iPhone Duo 展开竖屏：主页面不再给这一页留出顶部安全区，标签栏和按钮放进
+    // 状态栏那一行，位置用系统给的（右边让开状态栏）
+    return ValueListenableBuilder(
+      valueListenable: _mainController.homeTopBar,
+      builder: (context, region, _) {
+        const barHeight = 50.0;
+        final top = region?.topFor(barHeight) ?? 0.0;
+        return Scaffold(
+          primary: false,
+          resizeToAvoidBottomInset: false,
+          backgroundColor: Colors.transparent,
+          appBar: PreferredSize(
+            preferredSize: .fromHeight(
+              region == null ? barHeight : max(region.height, top + barHeight),
+            ),
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: top,
+                left: region?.padding.left ?? 0,
+                right: region?.padding.right ?? 0,
+              ),
+              child: Align(
+                alignment: .topCenter,
+                child: SizedBox(height: barHeight, child: tabRow),
               ),
             ),
-            actions,
-          ],
-        ),
-      ),
-      drawer: drawer,
-      endDrawer: endDrawer,
-      body: onBuild(child),
+          ),
+          drawer: drawer,
+          endDrawer: endDrawer,
+          body: onBuild(child),
+        );
+      },
     );
   }
 }

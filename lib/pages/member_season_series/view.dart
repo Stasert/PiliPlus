@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
@@ -80,8 +79,7 @@ class _SeasonSeriesPageState extends State<SeasonSeriesPage>
                         () => Builder(
                           builder: (context) => SimpleScaffold(
                             appBar: AppBar(
-                              automaticallyImplyLeading:
-                                  !IOSNativeTabBar.hasNativeBack(context),
+                              automaticallyImplyLeading: true,
                               title: Text(item.meta!.name!),
                             ),
                             body: ViewSafeArea(

@@ -1,4 +1,3 @@
-import 'package:PiliPlus/utils/ios/native_tab_bar.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -75,7 +74,7 @@ class _MusicRecommendPageState extends State<MusicRecommendPage>
   Widget _buildAppBar(ThemeData theme, EdgeInsets padding) {
     final info = _controller.musicDetail;
     return SliverAppBar(
-      automaticallyImplyLeading: !IOSNativeTabBar.hasNativeBack(context),
+      automaticallyImplyLeading: true,
       pinned: true,
       title: Row(
         spacing: 12,
